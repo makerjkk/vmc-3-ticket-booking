@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useCallback } from 'react';
+import { useReducer, useCallback, useMemo } from 'react';
 import type {
   ScheduleItem,
   SeatData,
@@ -340,103 +340,153 @@ export const useScheduleSelectionReducer = () => {
   const [state, dispatch] = useReducer(scheduleSelectionReducer, initialState);
 
   // 액션 생성자들
-  const actions = {
-    selectDate: useCallback((date: string) => {
-      dispatch({ type: 'SELECT_DATE', payload: date });
-    }, []),
+  const selectDate = useCallback((date: string) => {
+    dispatch({ type: 'SELECT_DATE', payload: date });
+  }, []);
 
-    selectSchedule: useCallback((scheduleId: string) => {
-      dispatch({ type: 'SELECT_SCHEDULE', payload: scheduleId });
-    }, []),
+  const selectSchedule = useCallback((scheduleId: string) => {
+    dispatch({ type: 'SELECT_SCHEDULE', payload: scheduleId });
+  }, []);
 
-    loadSchedulesStart: useCallback(() => {
-      dispatch({ type: 'LOAD_SCHEDULES_START' });
-    }, []),
+  const loadSchedulesStart = useCallback(() => {
+    dispatch({ type: 'LOAD_SCHEDULES_START' });
+  }, []);
 
-    loadSchedulesSuccess: useCallback((schedules: ScheduleItem[]) => {
-      dispatch({ type: 'LOAD_SCHEDULES_SUCCESS', payload: schedules });
-    }, []),
+  const loadSchedulesSuccess = useCallback((schedules: ScheduleItem[]) => {
+    dispatch({ type: 'LOAD_SCHEDULES_SUCCESS', payload: schedules });
+  }, []);
 
-    loadSchedulesFailure: useCallback((error: Error) => {
-      dispatch({ type: 'LOAD_SCHEDULES_FAILURE', payload: error });
-    }, []),
+  const loadSchedulesFailure = useCallback((error: Error) => {
+    dispatch({ type: 'LOAD_SCHEDULES_FAILURE', payload: error });
+  }, []);
 
-    loadSeatsStart: useCallback(() => {
-      dispatch({ type: 'LOAD_SEATS_START' });
-    }, []),
+  const loadSeatsStart = useCallback(() => {
+    dispatch({ type: 'LOAD_SEATS_START' });
+  }, []);
 
-    loadSeatsSuccess: useCallback((seats: SeatData[]) => {
-      dispatch({ type: 'LOAD_SEATS_SUCCESS', payload: seats });
-    }, []),
+  const loadSeatsSuccess = useCallback((seats: SeatData[]) => {
+    dispatch({ type: 'LOAD_SEATS_SUCCESS', payload: seats });
+  }, []);
 
-    loadSeatsFailure: useCallback((error: Error) => {
-      dispatch({ type: 'LOAD_SEATS_FAILURE', payload: error });
-    }, []),
+  const loadSeatsFailure = useCallback((error: Error) => {
+    dispatch({ type: 'LOAD_SEATS_FAILURE', payload: error });
+  }, []);
 
-    updateSeatCountStart: useCallback(() => {
-      dispatch({ type: 'UPDATE_SEAT_COUNT_START' });
-    }, []),
+  const updateSeatCountStart = useCallback(() => {
+    dispatch({ type: 'UPDATE_SEAT_COUNT_START' });
+  }, []);
 
-    updateSeatCountSuccess: useCallback((data: { scheduleId: string; availableSeats: number; totalSeats: number }) => {
-      dispatch({ type: 'UPDATE_SEAT_COUNT_SUCCESS', payload: data });
-    }, []),
+  const updateSeatCountSuccess = useCallback((data: { scheduleId: string; availableSeats: number; totalSeats: number }) => {
+    dispatch({ type: 'UPDATE_SEAT_COUNT_SUCCESS', payload: data });
+  }, []);
 
-    updateSeatCountFailure: useCallback((error: Error) => {
-      dispatch({ type: 'UPDATE_SEAT_COUNT_FAILURE', payload: error });
-    }, []),
+  const updateSeatCountFailure = useCallback((error: Error) => {
+    dispatch({ type: 'UPDATE_SEAT_COUNT_FAILURE', payload: error });
+  }, []);
 
-    startPolling: useCallback((interval: NodeJS.Timeout) => {
-      dispatch({ type: 'START_POLLING', payload: interval });
-    }, []),
+  const startPolling = useCallback((interval: NodeJS.Timeout) => {
+    dispatch({ type: 'START_POLLING', payload: interval });
+  }, []);
 
-    stopPolling: useCallback(() => {
-      dispatch({ type: 'STOP_POLLING' });
-    }, []),
+  const stopPolling = useCallback(() => {
+    dispatch({ type: 'STOP_POLLING' });
+  }, []);
 
-    incrementRetryCount: useCallback(() => {
-      dispatch({ type: 'INCREMENT_RETRY_COUNT' });
-    }, []),
+  const incrementRetryCount = useCallback(() => {
+    dispatch({ type: 'INCREMENT_RETRY_COUNT' });
+  }, []);
 
-    resetRetryCount: useCallback(() => {
-      dispatch({ type: 'RESET_RETRY_COUNT' });
-    }, []),
+  const resetRetryCount = useCallback(() => {
+    dispatch({ type: 'RESET_RETRY_COUNT' });
+  }, []);
 
-    showTooltip: useCallback((tooltip: TooltipState) => {
-      dispatch({ type: 'SHOW_TOOLTIP', payload: tooltip });
-    }, []),
+  const showTooltip = useCallback((tooltip: TooltipState) => {
+    dispatch({ type: 'SHOW_TOOLTIP', payload: tooltip });
+  }, []);
 
-    hideTooltip: useCallback(() => {
-      dispatch({ type: 'HIDE_TOOLTIP' });
-    }, []),
+  const hideTooltip = useCallback(() => {
+    dispatch({ type: 'HIDE_TOOLTIP' });
+  }, []);
 
-    selectSeat: useCallback((seatId: string) => {
-      dispatch({ type: 'SELECT_SEAT', payload: seatId });
-    }, []),
+  const selectSeat = useCallback((seatId: string) => {
+    dispatch({ type: 'SELECT_SEAT', payload: seatId });
+  }, []);
 
-    deselectSeat: useCallback((seatId: string) => {
-      dispatch({ type: 'DESELECT_SEAT', payload: seatId });
-    }, []),
+  const deselectSeat = useCallback((seatId: string) => {
+    dispatch({ type: 'DESELECT_SEAT', payload: seatId });
+  }, []);
 
-    clearSelectedSeats: useCallback(() => {
-      dispatch({ type: 'CLEAR_SELECTED_SEATS' });
-    }, []),
+  const clearSelectedSeats = useCallback(() => {
+    dispatch({ type: 'CLEAR_SELECTED_SEATS' });
+  }, []);
 
-    updateTotalPrice: useCallback((price: number) => {
-      dispatch({ type: 'UPDATE_TOTAL_PRICE', payload: price });
-    }, []),
+  const updateTotalPrice = useCallback((price: number) => {
+    dispatch({ type: 'UPDATE_TOTAL_PRICE', payload: price });
+  }, []);
 
-    updateBookingProgress: useCallback((progress: Partial<BookingProgress>) => {
-      dispatch({ type: 'UPDATE_BOOKING_PROGRESS', payload: progress });
-    }, []),
+  const updateBookingProgress = useCallback((progress: Partial<BookingProgress>) => {
+    dispatch({ type: 'UPDATE_BOOKING_PROGRESS', payload: progress });
+  }, []);
 
-    setOfflineStatus: useCallback((isOffline: boolean) => {
-      dispatch({ type: 'SET_OFFLINE_STATUS', payload: isOffline });
-    }, []),
+  const setOfflineStatus = useCallback((isOffline: boolean) => {
+    dispatch({ type: 'SET_OFFLINE_STATUS', payload: isOffline });
+  }, []);
 
-    resetState: useCallback(() => {
-      dispatch({ type: 'RESET_STATE' });
-    }, []),
-  };
+  const resetState = useCallback(() => {
+    dispatch({ type: 'RESET_STATE' });
+  }, []);
+
+  const actions = useMemo(() => ({
+    selectDate,
+    selectSchedule,
+    loadSchedulesStart,
+    loadSchedulesSuccess,
+    loadSchedulesFailure,
+    loadSeatsStart,
+    loadSeatsSuccess,
+    loadSeatsFailure,
+    updateSeatCountStart,
+    updateSeatCountSuccess,
+    updateSeatCountFailure,
+    startPolling,
+    stopPolling,
+    incrementRetryCount,
+    resetRetryCount,
+    showTooltip,
+    hideTooltip,
+    selectSeat,
+    deselectSeat,
+    clearSelectedSeats,
+    updateTotalPrice,
+    updateBookingProgress,
+    setOfflineStatus,
+    resetState,
+  }), [
+    selectDate,
+    selectSchedule,
+    loadSchedulesStart,
+    loadSchedulesSuccess,
+    loadSchedulesFailure,
+    loadSeatsStart,
+    loadSeatsSuccess,
+    loadSeatsFailure,
+    updateSeatCountStart,
+    updateSeatCountSuccess,
+    updateSeatCountFailure,
+    startPolling,
+    stopPolling,
+    incrementRetryCount,
+    resetRetryCount,
+    showTooltip,
+    hideTooltip,
+    selectSeat,
+    deselectSeat,
+    clearSelectedSeats,
+    updateTotalPrice,
+    updateBookingProgress,
+    setOfflineStatus,
+    resetState,
+  ]);
 
   return { state, actions };
 };

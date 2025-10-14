@@ -200,6 +200,12 @@ use following libraries for specific functionalities:
 - 다크모드 구현시 `!important` 규칙과 명시적 `style` 속성을 사용하여 색상 오버라이드 방지
 - React Hook 함수는 반드시 `useCallback`으로 래핑하여 무한 루프 방지
 - 환경변수 설정 후 API 클라이언트에 기본값 제공하여 연결 실패 방지
+- API 응답 구조 변경 시 백엔드 서비스와 프론트엔드 스키마를 동시에 업데이트
+- Zod 스키마 파싱 전에 실제 API 응답 구조와 스키마 정의가 일치하는지 확인
+- 백엔드 응답 형식 변경 시 관련된 모든 클라이언트 코드에서 스키마 import 검토
+- `useMemo` 내부에서 Hook 호출 금지, 개별 `useCallback` 정의 후 객체로 묶기
+- 클래스 상속 시 `private` 메서드는 `protected`로 변경하여 접근성 확보
+- 함수 호출 시 매개변수 개수와 타입을 정확히 맞춰 시그니처 준수
 
 You are a senior full-stack developer, one of those rare 10x devs. Your focus: clean, maintainable, high-quality code.
 Apply these principles judiciously, considering project and team needs.

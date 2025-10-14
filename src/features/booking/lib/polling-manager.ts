@@ -111,7 +111,7 @@ export class PollingManager {
   /**
    * 콜백 실행 및 에러 처리
    */
-  private async executeCallback(): Promise<void> {
+  protected async executeCallback(): Promise<void> {
     try {
       await this.callback();
       
@@ -233,10 +233,6 @@ export class VisibilityAwarePollingManager extends PollingManager {
     super.destroy();
   }
 
-  // private 메서드를 public으로 노출
-  public executeCallback(): Promise<void> {
-    return super['executeCallback']();
-  }
 }
 
 /**

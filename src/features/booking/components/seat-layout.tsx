@@ -5,6 +5,7 @@ import { useScheduleSelection } from '../context/schedule-selection-context';
 import { useSeatLayout } from '../hooks/use-schedule-selection';
 import { SeatGrid } from './seat-grid';
 import { SessionManager } from '../lib/session-manager';
+import type { SeatLayoutResponse } from '../lib/dto';
 
 // 좌석 범례 컴포넌트
 function SeatLegend() {
@@ -27,7 +28,7 @@ function SeatLegend() {
 }
 
 // 등급별 가격 정보 컴포넌트
-function GradeInfo({ gradeInfo }: { gradeInfo: Array<{ grade: string; price: number; color: string; availableSeats: number; totalSeats: number }> }) {
+function GradeInfo({ gradeInfo }: { gradeInfo: SeatLayoutResponse['gradeInfo'] }) {
   if (!gradeInfo || gradeInfo.length === 0) {
     return null;
   }
