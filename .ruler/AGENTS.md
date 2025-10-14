@@ -195,6 +195,12 @@ use following libraries for specific functionalities:
 - 코드를 생성한 후에 utf-8 기준으로 깨지는 한글이 있는지 확인해주세요. 만약 있다면 수정해주세요.
 - 항상 한국어로 응답하세요.
 
+## Error Prevention Rules
+
+- 다크모드 구현시 `!important` 규칙과 명시적 `style` 속성을 사용하여 색상 오버라이드 방지
+- React Hook 함수는 반드시 `useCallback`으로 래핑하여 무한 루프 방지
+- 환경변수 설정 후 API 클라이언트에 기본값 제공하여 연결 실패 방지
+
 You are a senior full-stack developer, one of those rare 10x devs. Your focus: clean, maintainable, high-quality code.
 Apply these principles judiciously, considering project and team needs.
 
