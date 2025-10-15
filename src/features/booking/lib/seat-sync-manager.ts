@@ -58,11 +58,21 @@ export class SeatSyncManager {
     try {
       const response = await this.fetchSeatStatus();
       
+      // 컴포넌트가 파괴된 경우 응답 무시
+      if (this.isDestroyed) {
+        return;
+      }
+      
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
+      
+      // 다시 한번 파괴 여부 확인 (비동기 작업 후)
+      if (this.isDestroyed) {
+        return;
+      }
       
       // 백엔드 respond 함수는 성공 시 result.data를 직접 반환
       // data는 SeatStatusUpdate 형태: { scheduleId, seats, timestamp }
@@ -74,17 +84,22 @@ export class SeatSyncManager {
       
       // 충돌 감지
       const conflicts = this.detectConflicts(updatedSeats);
-      if (conflicts.length > 0) {
+      if (conflicts.length > 0 && !this.isDestroyed) {
         this.onConflict(conflicts);
       }
 
       // 변화 감지 및 업데이트
-      if (this.hasSeatsChanged(updatedSeats)) {
+      if (this.hasSeatsChanged(updatedSeats) && !this.isDestroyed) {
         this.updateLastKnownSeats(updatedSeats);
         this.onUpdate(updatedSeats);
       }
 
     } catch (error) {
+      // 컴포넌트가 파괴된 경우 에러 무시
+      if (this.isDestroyed) {
+        return;
+      }
+      
       const errorMessage = error instanceof Error ? error.message : 'Unknown sync error';
       throw new Error(`Seat sync failed: ${errorMessage}`);
     }
@@ -110,6 +125,12 @@ export class SeatSyncManager {
       return response;
     } catch (error) {
       clearTimeout(timeoutId);
+      
+      // AbortError는 의도적인 취소이므로 조용히 실패
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request aborted');
+      }
+      
       throw error;
     }
   }
@@ -184,6 +205,27 @@ export class SeatSyncManager {
    * 동기화 에러 핸들러
    */
   private handleSyncError(error: Error, retryCount: number): void {
+    // 컴포넌트가 이미 파괴된 경우 무시
+    if (this.isDestroyed) {
+      return;
+    }
+
+    // Abort 에러 및 네비게이션 관련 에러는 로깅만 하고 콜백 호출하지 않음
+    const isExpectedError = 
+      error.message.includes('aborted') || 
+      error.message.includes('Request aborted') ||
+      error.message.includes('Failed to fetch') ||
+      error.message.includes('NetworkError') ||
+      error.message.includes('fetch') ||
+      error.name === 'AbortError';
+
+    if (isExpectedError) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[SeatSync] Expected error (navigation/abort) - ignoring:`, error.message);
+      }
+      return;
+    }
+    
     console.error(`[SeatSync] Sync error (attempt ${retryCount}):`, error);
     
     // 에러 콜백 호출

@@ -442,6 +442,79 @@ export const registerScheduleRoutes = (app: Hono<AppEnv>) => {
     return respond(c, result);
   });
 
+  // 좌석 검증 (좌석 선택 완료 시)
+  app.post('/api/booking/validate-seats', async (c) => {
+    const supabase = getSupabase(c);
+    const logger = getLogger(c);
+
+    let requestBody;
+    try {
+      requestBody = await c.req.json();
+    } catch (error) {
+      return respond(
+        c,
+        failure(400, 'INVALID_JSON', '유효하지 않은 JSON 형식입니다')
+      );
+    }
+
+    const { scheduleId, seatIds } = requestBody;
+
+    if (!scheduleId || !Array.isArray(seatIds) || seatIds.length === 0) {
+      return respond(
+        c,
+        failure(400, 'INVALID_REQUEST', 'scheduleId와 seatIds가 필요합니다')
+      );
+    }
+
+    logger.info('좌석 검증 요청', { scheduleId, seatCount: seatIds.length });
+
+    try {
+      // 선택된 좌석들의 현재 상태 조회
+      const { data: seats, error } = await supabase
+        .from('seats')
+        .select('id, status')
+        .eq('schedule_id', scheduleId)
+        .in('id', seatIds);
+
+      if (error) {
+        logger.error('좌석 상태 조회 실패', error);
+        return respond(
+          c,
+          failure(500, 'DATABASE_ERROR', '좌석 상태를 조회할 수 없습니다')
+        );
+      }
+
+      // 모든 좌석이 available 상태인지 확인
+      const invalidSeats = seats?.filter(seat => seat.status !== 'available') || [];
+
+      if (invalidSeats.length > 0) {
+        logger.warn('선택된 좌석이 이미 예약됨', { invalidSeats });
+        return c.json({
+          ok: true,
+          data: {
+            valid: false,
+            invalidSeats: invalidSeats.map(s => s.id),
+          },
+        });
+      }
+
+      logger.info('좌석 검증 성공');
+      return c.json({
+        ok: true,
+        data: {
+          valid: true,
+          invalidSeats: [],
+        },
+      });
+    } catch (error) {
+      logger.error('좌석 검증 중 예외 발생', error);
+      return respond(
+        c,
+        failure(500, 'INTERNAL_ERROR', '서버 내부 오류가 발생했습니다')
+      );
+    }
+  });
+
   // 좌석 정보 요약 조회 (customer-info 페이지용)
   app.post('/api/schedules/:scheduleId/seats/summary', async (c) => {
     const scheduleId = c.req.param('scheduleId');
@@ -486,10 +559,21 @@ export const registerScheduleRoutes = (app: Hono<AppEnv>) => {
 
       const totalPrice = seats?.reduce((sum, seat) => sum + seat.price, 0) || 0;
 
-      logger.info('좌석 정보 요약 조회 성공', { seatCount: seats?.length });
+      // snake_case를 camelCase로 변환
+      const transformedSeats = seats?.map(seat => ({
+        id: seat.id,
+        seatNumber: seat.seat_number,
+        rowName: seat.row_name,
+        seatIndex: seat.seat_index,
+        grade: seat.grade,
+        price: seat.price,
+        status: seat.status,
+      })) || [];
+
+      logger.info('좌석 정보 요약 조회 성공', { seatCount: transformedSeats.length });
 
       return c.json({
-        seats: seats || [],
+        seats: transformedSeats,
         totalPrice,
       });
     } catch (error) {

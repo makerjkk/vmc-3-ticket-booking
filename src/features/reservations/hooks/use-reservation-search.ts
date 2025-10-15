@@ -28,12 +28,30 @@ export const useReservationSearch = () => {
       queryParams.append('page', params.page.toString());
       queryParams.append('pageSize', params.pageSize.toString());
 
-      const response = await apiClient.get<ApiResponse<SearchReservationsResponse>>(
+      const response = await apiClient.get<SearchReservationsResponse>(
         `/api/reservations/search?${queryParams.toString()}`
       );
 
-      return response.data;
+      console.log('[검색 API] 응답:', response);
+
+      // 백엔드 respond 함수는 성공 시 data만 반환
+      // response.data = SearchReservationsResponse
+      if (response.data) {
+        return {
+          ok: true,
+          data: response.data,
+        };
+      } else {
+        return {
+          ok: false,
+          error: {
+            code: 'NO_DATA',
+            message: '응답 데이터가 없습니다',
+          },
+        };
+      }
     } catch (error) {
+      console.error('[검색 API] 에러:', error);
       return {
         ok: false,
         error: {

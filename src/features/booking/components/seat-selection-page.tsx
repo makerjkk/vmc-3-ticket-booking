@@ -87,14 +87,9 @@ export const SeatSelectionPage = memo<SeatSelectionPageProps>(({
 
   // 좌석 선택 완료 핸들러
   const handleSelectionComplete = (seats: Seat[]) => {
-    try {
-      // 다음 단계로 이동 (예약자 정보 입력)
-      const seatIds = seats.map(seat => seat.id).join(',');
-      router.push(`/booking/${concertId}/customer-info?scheduleId=${scheduleId}&seats=${seatIds}`);
-    } catch (error) {
-      console.error('Navigation error:', error);
-      throw error;
-    }
+    // 좌석 선택 완료 시 자동 이동하지 않음
+    // 사용자가 "좌석 선택 완료" 버튼을 클릭하면 모달이 열립니다
+    console.log('Seats selected:', seats.length);
   };
 
   // 에러 핸들러

@@ -182,7 +182,6 @@ export const getReservationDetail = async (
         `
         id,
         reservation_number,
-        concert_id,
         schedule_id,
         seat_ids,
         total_price,
@@ -193,10 +192,12 @@ export const getReservationDetail = async (
         created_at,
         cancelled_at,
         schedules (
+          id,
           date_time,
           concerts (
             id,
-            title
+            title,
+            poster_image_url
           )
         )
       `
@@ -213,10 +214,10 @@ export const getReservationDetail = async (
       );
     }
 
-    // 좌석 정보 조회 (id 포함)
+    // 좌석 정보 조회
     const { data: seats, error: seatsError } = await client
       .from(SEATS_TABLE)
-      .select('id, seat_number, grade, price')
+      .select('seat_number, grade, price')
       .in('id', data.seat_ids);
 
     if (seatsError) {
@@ -230,8 +231,9 @@ export const getReservationDetail = async (
 
     // 타입 안전성을 위한 체크
     const schedules = data.schedules as unknown as {
+      id: string;
       date_time: string;
-      concerts: { id: string; title: string };
+      concerts: { id: string; title: string; poster_image_url: string };
     };
 
     return success({
@@ -240,23 +242,27 @@ export const getReservationDetail = async (
       customerName: data.customer_name,
       customerPhone: data.customer_phone,
       customerEmail: data.customer_email,
-      totalPrice: data.total_price,
-      seatCount: data.seat_ids.length,
-      concertTitle: schedules.concerts.title,
-      concertId: schedules.concerts.id,
-      scheduleDateTime: schedules.date_time,
-      scheduleId: data.schedule_id,
-      seatNumbers: seats?.map((s) => s.seat_number) || [],
+      status: data.status,
+      createdAt: data.created_at,
+      cancelledAt: data.cancelled_at,
+      scheduleDateTime: schedules.date_time, // 프론트엔드 호환성을 위해 추가
+      concert: {
+        id: schedules.concerts.id,
+        title: schedules.concerts.title,
+        posterImageUrl: schedules.concerts.poster_image_url || null, // null 처리
+      },
+      schedule: {
+        id: schedules.id,
+        dateTime: schedules.date_time,
+      },
       seats:
         seats?.map((s) => ({
-          id: s.id,
           seatNumber: s.seat_number,
           grade: s.grade,
           price: s.price,
         })) || [],
-      status: data.status,
-      createdAt: data.created_at,
-      cancelledAt: data.cancelled_at,
+      seatCount: data.seat_ids.length,
+      totalPrice: data.total_price,
     });
   } catch (error) {
     console.error('Reservation detail fetch exception:', error);
@@ -389,7 +395,15 @@ export const searchReservations = async (
       );
 
     if (request.reservationId) {
-      query = query.eq('id', request.reservationId);
+      // UUID 형식인지 예약번호 형식인지 구분
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(request.reservationId)) {
+        // UUID로 검색 (id 컬럼)
+        query = query.eq('id', request.reservationId);
+      } else {
+        // 예약번호로 검색 (reservation_number 컬럼)
+        query = query.eq('reservation_number', request.reservationId);
+      }
     } else if (request.phone) {
       query = query.eq('customer_phone', request.phone);
     } else if (request.email) {

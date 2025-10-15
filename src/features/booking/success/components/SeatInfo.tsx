@@ -17,31 +17,58 @@ export function SeatInfo() {
   const groupedSeats = groupSeatsByGrade(reservationData.seats);
 
   return (
-    <div className="mb-6">
-      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-        <Ticket className="w-5 h-5" />
+    <div 
+      className="mb-6 p-5 rounded-lg"
+      style={{ backgroundColor: '#f8fafc' }}
+    >
+      <h3 
+        className="text-xl font-bold mb-5 flex items-center gap-2"
+        style={{ color: '#1e293b' }}
+      >
+        <Ticket className="w-6 h-6" style={{ color: '#3b82f6' }} />
         좌석 정보
       </h3>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {Object.entries(groupedSeats).map(([grade, seats]) => (
-          <div key={grade} className="flex items-start gap-3">
-            <Badge variant="outline" className="flex-shrink-0">
+          <div 
+            key={grade} 
+            className="flex items-start gap-3 p-3 rounded-lg"
+            style={{ backgroundColor: '#ffffff' }}
+          >
+            <Badge 
+              variant="outline" 
+              className="flex-shrink-0 font-bold border-2"
+              style={{ 
+                borderColor: '#3b82f6',
+                color: '#3b82f6'
+              }}
+            >
               {grade}석
             </Badge>
             <div className="flex-1 flex flex-wrap gap-2">
               {seats.map((seat) => (
-                <span key={seat.seatNumber} className="text-gray-700">
+                <span 
+                  key={seat.seatNumber} 
+                  className="font-medium"
+                  style={{ color: '#1e293b' }}
+                >
                   {seat.seatNumber}
                 </span>
               ))}
             </div>
           </div>
         ))}
-        <div className="text-sm text-gray-600 mt-2">
+        <div 
+          className="text-base font-semibold mt-3 p-3 rounded-lg"
+          style={{ 
+            backgroundColor: '#ffffff',
+            color: '#64748b'
+          }}
+        >
           총 {reservationData.seatCount}석
         </div>
       </div>
-      <Separator className="mt-6" />
+      <Separator className="mt-6" style={{ backgroundColor: '#e2e8f0' }} />
     </div>
   );
 }

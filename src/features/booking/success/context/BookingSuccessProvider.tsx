@@ -35,17 +35,31 @@ export function BookingSuccessProvider({ children }: BookingSuccessProviderProps
     apiClient
       .get(`/api/reservations/${id}`)
       .then((response) => {
-        if (response.data?.ok && response.data?.data) {
+        console.log('[예약 완료 페이지] API 응답:', response);
+        console.log('[예약 완료 페이지] response.data:', response.data);
+        
+        // 백엔드 respond 함수는 성공 시 data만 반환
+        // 성공: { reservationId: 'xxx', reservationNumber: 'yyy', ... }
+        // 실패: { error: { code: 'xxx', message: 'yyy' } }
+        
+        if (response.data && response.data.reservationId) {
+          console.log('[예약 완료 페이지] 예약 정보 조회 성공');
           dispatch({
             type: ActionTypes.FETCH_RESERVATION_SUCCESS,
-            payload: response.data.data,
+            payload: response.data,
           });
+        } else if (response.data && response.data.error) {
+          console.log('[예약 완료 페이지] API 에러 응답:', response.data.error);
+          const error = mapApiErrorToErrorInfo('NOT_FOUND');
+          dispatch({ type: ActionTypes.FETCH_RESERVATION_ERROR, payload: error });
         } else {
+          console.error('[예약 완료 페이지] 예상치 못한 응답 구조:', response.data);
           const error = mapApiErrorToErrorInfo('NOT_FOUND');
           dispatch({ type: ActionTypes.FETCH_RESERVATION_ERROR, payload: error });
         }
       })
       .catch((err) => {
+        console.error('[예약 완료 페이지] API 에러:', err);
         const statusCode = err?.response?.status;
         const error = mapApiErrorToErrorInfo(statusCode);
         dispatch({ type: ActionTypes.FETCH_RESERVATION_ERROR, payload: error });

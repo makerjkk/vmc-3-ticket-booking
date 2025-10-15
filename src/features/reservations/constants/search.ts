@@ -13,12 +13,19 @@ export const VALIDATION_MESSAGES = {
 } as const;
 
 export const PLACEHOLDERS = {
-  RESERVATION_ID: '예약 번호를 입력하세요',
-  CONTACT: '휴대폰 번호 또는 이메일을 입력하세요',
+  RESERVATION_ID: '예: R2510150002 (선택)',
+  CONTACT: '예: 010-1234-5678 또는 email@example.com (선택)',
 } as const;
 
 export const EMPTY_STATE_MESSAGES = {
   TITLE: '검색 결과가 없습니다',
   DESCRIPTION: '예약 번호 또는 예약 시 입력한 연락처를 다시 확인해주세요',
+} as const;
+
+export const ERROR_MESSAGES = {
+  RESERVATION_NOT_FOUND: '잘못된 예약번호이거나 예약되지 않은 번호입니다',
+  PHONE_NOT_FOUND: '예약되지 않은 전화번호입니다',
+  EMAIL_NOT_FOUND: '예약되지 않은 이메일입니다',
+  CONTACT_NOT_FOUND: '예약되지 않은 연락처입니다',
 } as const;
 

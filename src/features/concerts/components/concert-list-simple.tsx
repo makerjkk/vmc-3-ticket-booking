@@ -15,21 +15,39 @@ interface ConcertListProps {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-card border border-border">
-        <Music className="h-10 w-10 text-muted-foreground" />
+      <div 
+        className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border-2"
+        style={{ 
+          backgroundColor: '#f8fafc',
+          borderColor: '#e2e8f0'
+        }}
+      >
+        <Music className="h-10 w-10" style={{ color: '#64748b' }} />
       </div>
       
-      <h3 className="mb-3 text-xl font-semibold text-foreground">
+      <h3 
+        className="mb-3 text-xl font-semibold"
+        style={{ color: '#1e293b' }}
+      >
         예매 가능한 콘서트가 없습니다
       </h3>
       
-      <p className="mb-8 max-w-md text-muted-foreground leading-relaxed">
+      <p 
+        className="mb-8 max-w-md leading-relaxed"
+        style={{ color: '#64748b' }}
+      >
         현재 예매 가능한 콘서트가 없습니다. 새로운 공연이 추가되면 알려드릴게요.
       </p>
 
-      <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border">
-        <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
-        <span className="text-sm text-muted-foreground">새로운 공연을 준비 중입니다</span>
+      <div 
+        className="flex items-center gap-2 px-4 py-2 rounded-full border-2"
+        style={{ 
+          backgroundColor: '#f8fafc',
+          borderColor: '#e2e8f0'
+        }}
+      >
+        <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#3b82f6' }}></div>
+        <span className="text-sm" style={{ color: '#64748b' }}>새로운 공연을 준비 중입니다</span>
       </div>
     </div>
   );
@@ -73,16 +91,20 @@ export function ConcertListSimple({ className }: ConcertListProps) {
 
   // 콘서트 목록 표시
   return (
-    <div className={cn('container mx-auto px-4 py-8', className)} style={{ backgroundColor: '#0D0E24' }}>
+    <div className={cn('container mx-auto px-4 py-8', className)} style={{ backgroundColor: '#ffffff' }}>
       {/* 헤더 */}
       <div className="mb-12 text-center">
-        <h2 className="text-3xl font-bold text-foreground mb-3">
-          <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            예매 가능한 콘서트
-          </span>
+        <h2 
+          className="text-3xl font-bold mb-3"
+          style={{ color: '#1e293b' }}
+        >
+          예매 가능한 콘서트
         </h2>
-        <p className="text-muted-foreground text-lg">
-          총 <span className="text-secondary font-semibold">{concerts.length}개</span>의 콘서트가 있습니다
+        <p 
+          className="text-lg"
+          style={{ color: '#64748b' }}
+        >
+          총 <span className="font-semibold" style={{ color: '#3b82f6' }}>{concerts.length}개</span>의 콘서트가 있습니다
         </p>
       </div>
 
@@ -100,9 +122,15 @@ export function ConcertListSimple({ className }: ConcertListProps) {
 
       {/* 추가 정보 */}
       <div className="mt-16 text-center">
-        <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gray-800 border border-gray-600">
-          <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-          <p className="text-sm text-gray-300">
+        <div 
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2"
+          style={{ 
+            backgroundColor: '#f8fafc',
+            borderColor: '#e2e8f0'
+          }}
+        >
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#3b82f6' }}></div>
+          <p className="text-sm" style={{ color: '#64748b' }}>
             더 많은 공연이 곧 추가될 예정입니다
           </p>
         </div>

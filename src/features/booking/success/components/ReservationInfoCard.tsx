@@ -18,18 +18,39 @@ export function ReservationInfoCard() {
   if (!isSuccess || !reservationData) return null;
 
   return (
-    <div className="container mx-auto px-4 py-8 sm:py-12 max-w-3xl">
+    <div 
+      className="container mx-auto px-4 py-8 sm:py-12 max-w-3xl"
+      style={{ backgroundColor: '#ffffff' }}
+    >
       <SuccessHeader />
 
-      <Card className="mb-6">
-        <CardContent className="p-4 sm:p-6">
+      <Card 
+        className="mb-6 shadow-lg"
+        style={{ 
+          backgroundColor: '#ffffff',
+          borderColor: '#e2e8f0'
+        }}
+      >
+        <CardContent className="p-6 sm:p-8">
           {isCancelled && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-red-700 font-medium text-sm sm:text-base">
+            <div 
+              className="rounded-lg p-5 mb-6 border-2"
+              style={{
+                backgroundColor: '#fef2f2',
+                borderColor: '#fecaca'
+              }}
+            >
+              <p 
+                className="font-bold text-base sm:text-lg"
+                style={{ color: '#991b1b' }}
+              >
                 이 예약은 취소되었습니다
               </p>
               {reservationData.cancelledAt && (
-                <p className="text-red-600 text-xs sm:text-sm mt-1">
+                <p 
+                  className="text-sm sm:text-base mt-2"
+                  style={{ color: '#dc2626' }}
+                >
                   취소 일시: {new Date(reservationData.cancelledAt).toLocaleString('ko-KR')}
                 </p>
               )}

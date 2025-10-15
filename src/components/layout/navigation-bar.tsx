@@ -2,8 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Music, User, Search, Bell } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Music } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavigationBarProps {
@@ -41,62 +40,12 @@ export function NavigationBar({ className }: NavigationBarProps) {
         {/* 중앙 메뉴 */}
         <div className="hidden md:flex items-center gap-8">
           <Link
-            href="/"
-            className="text-sm font-medium text-white hover:text-gray-300 transition-colors"
+            href="/reservations"
+            className="text-lg font-bold text-white hover:text-gray-300 transition-colors"
+            style={{ fontSize: '1.125rem', fontWeight: '700' }}
           >
-            콘서트
+            예약 확인
           </Link>
-          <Link
-            href="/schedules"
-            className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
-          >
-            공연 일정
-          </Link>
-          <Link
-            href="/venues"
-            className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
-          >
-            공연장
-          </Link>
-          <Link
-            href="/events"
-            className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
-          >
-            이벤트
-          </Link>
-        </div>
-
-        {/* 우측 유틸리티 */}
-        <div className="flex items-center gap-2">
-          {/* 검색 버튼 */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="hidden sm:flex items-center gap-2 text-gray-300 hover:text-white hover:bg-gray-700"
-          >
-            <Search className="w-4 h-4" />
-            <span className="text-sm">검색</span>
-          </Button>
-
-          {/* 알림 버튼 */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="relative text-gray-300 hover:text-white hover:bg-gray-700"
-          >
-            <Bell className="w-4 h-4" />
-            {/* 알림 배지 */}
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </Button>
-
-          {/* 사용자 메뉴 */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-gray-300 hover:text-white hover:bg-gray-700"
-          >
-            <User className="w-4 h-4" />
-          </Button>
         </div>
       </div>
     </nav>

@@ -17,16 +17,17 @@ type ApiResponse<T> = {
 export const useReservationDetailApi = () => {
   const fetchReservationDetail = useCallback(
     async (reservationId: string): Promise<ReservationDetailResponse> => {
-      const response = await apiClient.get<ApiResponse<ReservationDetailResponse>>(
+      const response = await apiClient.get<ReservationDetailResponse>(
         `/api/reservations/${reservationId}`
       );
 
-      if (!response.data?.ok || !response.data.data) {
-        const errorMessage = response.data?.error?.message || ERROR_MESSAGES.FETCH_FAILED;
-        throw new Error(errorMessage);
+      // 백엔드 respond() 함수는 성공 시 data를 직접 반환
+      // axios 응답 구조: response.data = { reservationId, ... }
+      if (!response.data || !response.data.reservationId) {
+        throw new Error(ERROR_MESSAGES.FETCH_FAILED);
       }
 
-      return response.data.data;
+      return response.data;
     },
     []
   );

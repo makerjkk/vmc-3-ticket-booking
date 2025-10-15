@@ -34,7 +34,7 @@ export default function CancelDialog({
 
         <div className="mb-4 space-y-2 text-gray-700">
           <p>
-            <strong>콘서트:</strong> {reservation.concertTitle}
+            <strong>콘서트:</strong> {reservation.concert?.title || '정보 없음'}
           </p>
           <p>
             <strong>좌석:</strong> {seatsSummary}

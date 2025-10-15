@@ -42,17 +42,21 @@ export const CompleteButton = memo<CompleteButtonProps>(({ scheduleId, className
         onClick={handleClick}
         disabled={!isEnabled}
         size="lg"
-        className="w-full h-12 text-base font-medium"
+        className="w-full h-14 text-base font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transition-all disabled:bg-gray-300 disabled:text-gray-500"
+        style={{ 
+          backgroundColor: isEnabled ? '#2563eb' : '#d1d5db',
+          color: '#ffffff'
+        }}
       >
         {isValidating ? (
           <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            좌석 확인 중...
+            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            <span className="font-bold">좌석 확인 중...</span>
           </>
         ) : (
           <>
-            {buttonText}
-            {isEnabled && <ArrowRight className="w-4 h-4 ml-2" />}
+            <span className="font-bold">{buttonText}</span>
+            {isEnabled && <ArrowRight className="w-5 h-5 ml-2" />}
           </>
         )}
       </Button>

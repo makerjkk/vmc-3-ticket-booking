@@ -13,34 +13,66 @@ export function CustomerInfo() {
   if (!reservationData) return null;
 
   return (
-    <div className="mb-6">
-      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-        <User className="w-5 h-5" />
+    <div 
+      className="mb-6 p-5 rounded-lg"
+      style={{ backgroundColor: '#f8fafc' }}
+    >
+      <h3 
+        className="text-xl font-bold mb-5 flex items-center gap-2"
+        style={{ color: '#1e293b' }}
+      >
+        <User className="w-6 h-6" style={{ color: '#3b82f6' }} />
         예약자 정보
       </h3>
-      <div className="space-y-3">
-        <div className="flex items-start gap-3">
-          <span className="text-sm text-gray-500 w-24 flex-shrink-0">예약 번호</span>
-          <span className="text-sm font-mono text-gray-900 break-all">
+      <div className="space-y-4">
+        <div 
+          className="flex items-start gap-3 p-3 rounded-lg"
+          style={{ backgroundColor: '#ffffff' }}
+        >
+          <span 
+            className="text-sm font-semibold w-24 flex-shrink-0"
+            style={{ color: '#64748b' }}
+          >
+            예약 번호
+          </span>
+          <span 
+            className="text-base font-mono font-bold break-all"
+            style={{ color: '#2563eb' }}
+          >
             {reservationData.reservationNumber}
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
-          <span className="text-gray-700">{reservationData.customerName}</span>
+        <div 
+          className="flex items-center gap-3 p-3 rounded-lg"
+          style={{ backgroundColor: '#ffffff' }}
+        >
+          <User className="w-5 h-5 flex-shrink-0" style={{ color: '#64748b' }} />
+          <span className="text-base font-medium" style={{ color: '#1e293b' }}>
+            {reservationData.customerName}
+          </span>
         </div>
-        <div className="flex items-center gap-3">
-          <Phone className="w-4 h-4 text-gray-500 flex-shrink-0" />
-          <span className="text-gray-700">{reservationData.customerPhone}</span>
+        <div 
+          className="flex items-center gap-3 p-3 rounded-lg"
+          style={{ backgroundColor: '#ffffff' }}
+        >
+          <Phone className="w-5 h-5 flex-shrink-0" style={{ color: '#64748b' }} />
+          <span className="text-base font-medium" style={{ color: '#1e293b' }}>
+            {reservationData.customerPhone}
+          </span>
         </div>
         {hasEmail && (
-          <div className="flex items-center gap-3">
-            <Mail className="w-4 h-4 text-gray-500 flex-shrink-0" />
-            <span className="text-gray-700 break-all">{reservationData.customerEmail}</span>
+          <div 
+            className="flex items-center gap-3 p-3 rounded-lg"
+            style={{ backgroundColor: '#ffffff' }}
+          >
+            <Mail className="w-5 h-5 flex-shrink-0" style={{ color: '#64748b' }} />
+            <span className="text-base font-medium break-all" style={{ color: '#1e293b' }}>
+              {reservationData.customerEmail}
+            </span>
           </div>
         )}
       </div>
-      <Separator className="mt-6" />
+      <Separator className="mt-6" style={{ backgroundColor: '#e2e8f0' }} />
     </div>
   );
 }

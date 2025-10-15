@@ -11,6 +11,7 @@ export const ScheduleItemSchema = z.object({
   id: z.string().uuid(),
   concertId: z.string().uuid(),
   dateTime: z.string(),
+  time: z.string().optional(), // 한국 시간 기준 시간 문자열 (예: "19:00")
   availableSeats: z.number().min(0),
   totalSeats: z.number().min(0),
   isSoldOut: z.boolean(),

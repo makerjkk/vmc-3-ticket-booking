@@ -5,8 +5,8 @@ import { useReservationSearchReducer } from '../hooks/use-reservation-search-red
 import type { ReservationSearchState, ReservationSearchAction } from '../hooks/use-reservation-search-reducer';
 import { useReservationSearch } from '../hooks/use-reservation-search';
 import { useSearchValidation } from '../hooks/use-search-validation';
-import { isValidPhone } from '../lib/validators';
-import { SEARCH_CONSTANTS, VALIDATION_MESSAGES } from '../constants/search';
+import { isValidPhone, isValidEmail } from '../lib/validators';
+import { SEARCH_CONSTANTS, VALIDATION_MESSAGES, ERROR_MESSAGES } from '../constants/search';
 
 type ReservationSearchContextType = {
   state: ReservationSearchState;
@@ -40,24 +40,36 @@ export const ReservationSearchProvider: React.FC<{ children: React.ReactNode }> 
   }, [validateContactField]);
 
   const search = useCallback(async () => {
-    if (!state.searchForm.reservationId && !state.searchForm.contact) {
+    // 예약번호 또는 연락처 중 하나는 반드시 입력되어야 함
+    const hasReservationId = Boolean(state.searchForm.reservationId.trim());
+    const hasContact = Boolean(state.searchForm.contact.trim());
+    
+    if (!hasReservationId && !hasContact) {
       dispatch({
         type: 'SET_VALIDATION_ERROR',
         payload: { field: 'reservationId', error: VALIDATION_MESSAGES.NO_SEARCH_CRITERIA },
       });
+      dispatch({
+        type: 'SET_VALIDATION_ERROR',
+        payload: { field: 'contact', error: VALIDATION_MESSAGES.NO_SEARCH_CRITERIA },
+      });
       return;
     }
 
-    if (state.validationErrors.reservationId || state.validationErrors.contact) {
+    // 입력된 필드에 대해서만 유효성 검사
+    if (hasReservationId && state.validationErrors.reservationId) {
+      return;
+    }
+    if (hasContact && state.validationErrors.contact) {
       return;
     }
 
     dispatch({ type: 'SEARCH_START' });
 
     const params = {
-      reservationId: state.searchForm.reservationId || undefined,
-      phone: isValidPhone(state.searchForm.contact) ? state.searchForm.contact : undefined,
-      email: !isValidPhone(state.searchForm.contact) && state.searchForm.contact
+      reservationId: hasReservationId ? state.searchForm.reservationId : undefined,
+      phone: hasContact && isValidPhone(state.searchForm.contact) ? state.searchForm.contact : undefined,
+      email: hasContact && !isValidPhone(state.searchForm.contact) && state.searchForm.contact
         ? state.searchForm.contact
         : undefined,
       page: 1,
@@ -67,14 +79,40 @@ export const ReservationSearchProvider: React.FC<{ children: React.ReactNode }> 
     const result = await searchReservations(params);
 
     if (result.ok && result.data) {
-      dispatch({
-        type: 'SEARCH_SUCCESS',
-        payload: {
-          reservations: result.data.reservations,
-          totalCount: result.data.totalCount,
-          totalPages: result.data.totalPages,
-        },
-      });
+      // 결과가 있으면 성공
+      if (result.data.reservations.length > 0) {
+        dispatch({
+          type: 'SEARCH_SUCCESS',
+          payload: {
+            reservations: result.data.reservations,
+            totalCount: result.data.totalCount,
+            totalPages: result.data.totalPages,
+          },
+        });
+      } else {
+        // 결과가 없으면 검색 조건에 따라 적절한 메시지 표시
+        let errorMessage: string = VALIDATION_MESSAGES.SEARCH_FAILED;
+        
+        if (hasReservationId && !hasContact) {
+          errorMessage = ERROR_MESSAGES.RESERVATION_NOT_FOUND;
+        } else if (!hasReservationId && hasContact) {
+          if (isValidPhone(state.searchForm.contact)) {
+            errorMessage = ERROR_MESSAGES.PHONE_NOT_FOUND;
+          } else if (isValidEmail(state.searchForm.contact)) {
+            errorMessage = ERROR_MESSAGES.EMAIL_NOT_FOUND;
+          } else {
+            errorMessage = ERROR_MESSAGES.CONTACT_NOT_FOUND;
+          }
+        } else {
+          // 둘 다 입력한 경우
+          errorMessage = '입력하신 정보와 일치하는 예약을 찾을 수 없습니다';
+        }
+        
+        dispatch({
+          type: 'SEARCH_FAILURE',
+          payload: errorMessage,
+        });
+      }
     } else {
       dispatch({
         type: 'SEARCH_FAILURE',

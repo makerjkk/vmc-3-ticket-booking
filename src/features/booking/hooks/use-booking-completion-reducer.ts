@@ -124,6 +124,7 @@ export const bookingCompletionReducer = (
       };
 
     case 'VALIDATION_SUCCESS':
+      console.log('[Reducer] VALIDATION_SUCCESS - 모달 열기');
       return {
         ...state,
         ui: {

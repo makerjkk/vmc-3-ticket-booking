@@ -48,31 +48,35 @@ export const CreateReservationResponseSchema = z.object({
   createdAt: z.string(),
 });
 
-// 예약 상세 응답 스키마
+// 예약 상세 응답 스키마 (예약 완료 페이지용)
 export const ReservationDetailResponseSchema = z.object({
   reservationId: z.string().uuid(),
   reservationNumber: z.string(),
   customerName: z.string(),
   customerPhone: z.string(),
   customerEmail: z.string().nullable(),
-  totalPrice: z.number(),
-  seatCount: z.number(),
-  concertTitle: z.string(),
-  concertId: z.string().uuid(),
-  scheduleDateTime: z.string(),
-  scheduleId: z.string().uuid(),
-  seatNumbers: z.array(z.string()),
+  status: z.enum(['confirmed', 'cancelled']),
+  createdAt: z.string(),
+  cancelledAt: z.string().nullable(),
+  scheduleDateTime: z.string(), // 프론트엔드 호환성을 위해 추가
+  concert: z.object({
+    id: z.string().uuid(),
+    title: z.string(),
+    posterImageUrl: z.string().nullable(), // nullable로 수정
+  }),
+  schedule: z.object({
+    id: z.string().uuid(),
+    dateTime: z.string(),
+  }),
   seats: z.array(
     z.object({
-      id: z.string().uuid(),
       seatNumber: z.string(),
       grade: z.string(),
       price: z.number(),
     })
   ),
-  status: z.enum(['confirmed', 'cancelled']),
-  createdAt: z.string(),
-  cancelledAt: z.string().nullable(),
+  seatCount: z.number(),
+  totalPrice: z.number(),
 });
 
 // 예약 취소 응답 스키마
@@ -86,7 +90,15 @@ export const CancelReservationResponseSchema = z.object({
 
 // 예약 검색 요청 스키마
 export const SearchReservationsRequestSchema = z.object({
-  reservationId: z.string().uuid('유효한 예약 번호가 필요합니다').optional(),
+  // reservationId는 UUID(id) 또는 예약번호(reservation_number: R + 10자리 숫자) 모두 허용
+  reservationId: z.string().refine(
+    (val) => {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const reservationNumberRegex = /^R\d{10}$/;
+      return uuidRegex.test(val) || reservationNumberRegex.test(val);
+    },
+    { message: '올바른 예약 번호 형식이 아닙니다 (예: R2510150002)' }
+  ).optional(),
   phone: z.string().regex(/^010-\d{4}-\d{4}$/, '휴대폰 번호는 010-1234-5678 형식이어야 합니다').optional(),
   email: z.string().email('올바른 이메일 형식이 아닙니다').optional(),
   page: z.number().int().min(1).default(1),

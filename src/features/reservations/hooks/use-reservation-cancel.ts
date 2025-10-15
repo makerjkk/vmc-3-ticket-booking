@@ -17,16 +17,17 @@ type ApiResponse<T> = {
 export const useReservationCancelApi = () => {
   const cancelReservation = useCallback(
     async (reservationId: string): Promise<CancelReservationResponse> => {
-      const response = await apiClient.delete<ApiResponse<CancelReservationResponse>>(
+      const response = await apiClient.delete<CancelReservationResponse>(
         `/api/reservations/${reservationId}`
       );
 
-      if (!response.data?.ok || !response.data.data) {
-        const errorMessage = response.data?.error?.message || ERROR_MESSAGES.CANCEL_FAILED;
-        throw new Error(errorMessage);
+      // 백엔드 respond() 함수는 성공 시 data를 직접 반환
+      // axios 응답 구조: response.data = { reservationId, reservationNumber, status, ... }
+      if (!response.data || !response.data.reservationId) {
+        throw new Error(ERROR_MESSAGES.CANCEL_FAILED);
       }
 
-      return response.data.data;
+      return response.data;
     },
     []
   );

@@ -173,7 +173,7 @@ export const getAvailableDates = async (
           dateInfo.hasAvailableSeats = true;
         }
         
-        // 스케줄 시간 정보 추가
+        // 스케줄 시간 정보 추가 (한국 시간 기준)
         const scheduleTime = new Date(schedule.date_time);
         const timeString = scheduleTime.toLocaleTimeString('ko-KR', { 
           hour: '2-digit', 
@@ -182,6 +182,7 @@ export const getAvailableDates = async (
           timeZone: 'Asia/Seoul'
         });
         
+        // 원본 dateTime을 그대로 반환 (Supabase timestamptz)
         dateInfo.schedules.push({
           time: timeString,
           dateTime: schedule.date_time,
@@ -304,11 +305,21 @@ export const getSchedulesByDate = async (
           .eq('schedule_id', scheduleRow.id);
 
         if (seatsError) {
+          // 한국 시간 기준 시간 문자열 생성
+          const scheduleTime = new Date(scheduleRow.date_time);
+          const timeString = scheduleTime.toLocaleTimeString('ko-KR', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false,
+            timeZone: 'Asia/Seoul'
+          });
+          
           // 좌석 데이터 조회 실패 시 0으로 처리
           return {
             id: scheduleRow.id,
             concertId: scheduleRow.concert_id,
             dateTime: scheduleRow.date_time,
+            time: timeString,
             availableSeats: 0,
             totalSeats: 0,
             isSoldOut: true,
@@ -321,10 +332,27 @@ export const getSchedulesByDate = async (
         const isSoldOut = availableSeats === 0;
         const isAlmostSoldOut = !isSoldOut && availableSeats <= 10;
 
+        // 한국 시간 기준 시간 문자열 생성
+        const scheduleTime = new Date(scheduleRow.date_time);
+        const timeString = scheduleTime.toLocaleTimeString('ko-KR', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: false,
+          timeZone: 'Asia/Seoul'
+        });
+
+        // 디버깅: 실제 데이터 확인
+        console.log('[Schedule Debug]', {
+          originalDateTime: scheduleRow.date_time,
+          parsedTime: scheduleTime.toISOString(),
+          kstTime: timeString,
+        });
+
         return {
           id: scheduleRow.id,
           concertId: scheduleRow.concert_id,
           dateTime: scheduleRow.date_time,
+          time: timeString, // 한국 시간 기준 시간 (예: "19:00")
           availableSeats,
           totalSeats,
           isSoldOut,

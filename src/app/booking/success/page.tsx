@@ -28,8 +28,13 @@ function BookingSuccessContent() {
  */
 export default function BookingSuccessPage() {
   return (
-    <BookingSuccessProvider>
-      <BookingSuccessContent />
-    </BookingSuccessProvider>
+    <div 
+      className="min-h-screen"
+      style={{ backgroundColor: '#ffffff' }}
+    >
+      <BookingSuccessProvider>
+        <BookingSuccessContent />
+      </BookingSuccessProvider>
+    </div>
   );
 }

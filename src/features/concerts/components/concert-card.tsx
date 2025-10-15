@@ -35,12 +35,15 @@ export function ConcertCard({
   return (
     <div
       className={cn(
-        'group w-full max-w-sm mx-auto overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-200',
-        'hover:shadow-xl hover:-translate-y-2 hover:border-secondary/50',
-        'focus-within:ring-2 focus-within:ring-secondary focus-within:ring-offset-2 focus-within:ring-offset-background',
+        'group w-full max-w-sm mx-auto overflow-hidden rounded-xl border-2 shadow-md transition-all duration-200',
+        'hover:shadow-xl hover:-translate-y-2',
+        'focus-within:ring-2 focus-within:ring-offset-2',
         className
       )}
-      style={{ backgroundColor: '#1F2937' }}
+      style={{ 
+        backgroundColor: '#ffffff',
+        borderColor: '#e2e8f0'
+      }}
     >
       {/* 포스터 이미지 */}
       <div className="relative w-full h-80 overflow-hidden bg-muted">
@@ -87,18 +90,27 @@ export function ConcertCard({
       {/* 콘서트 정보 */}
       <div className="p-6">
         {/* 제목 */}
-        <h3 className="mb-3 line-clamp-2 text-xl font-semibold text-card-foreground group-hover:text-primary transition-colors">
+        <h3 
+          className="mb-3 line-clamp-2 text-xl font-semibold transition-colors"
+          style={{ color: '#1e293b' }}
+        >
           {concert.title}
         </h3>
 
         {/* 부가 정보 */}
         <div className="mb-6 space-y-2">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4 text-secondary" />
+          <div 
+            className="flex items-center gap-2 text-sm"
+            style={{ color: '#64748b' }}
+          >
+            <MapPin className="h-4 w-4" style={{ color: '#3b82f6' }} />
             <span>공연장 정보</span>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Calendar className="h-4 w-4 text-secondary" />
+          <div 
+            className="flex items-center gap-2 text-sm"
+            style={{ color: '#64748b' }}
+          >
+            <Calendar className="h-4 w-4" style={{ color: '#3b82f6' }} />
             <span>공연 일정</span>
           </div>
         </div>
@@ -108,12 +120,25 @@ export function ConcertCard({
           onClick={onBookingClick}
           disabled={isLoading || !concert.hasAvailableSchedules}
           className={cn(
-            'w-full transition-all duration-200 font-medium',
+            'w-full transition-all duration-200 font-semibold text-base',
             concert.hasAvailableSchedules 
-              ? 'bg-white hover:bg-gray-100 text-gray-900 shadow-lg hover:shadow-xl border border-gray-200'
-              : 'bg-gray-600 text-gray-300 cursor-not-allowed',
-            isLoading && 'bg-gray-600 text-gray-300'
+              ? 'shadow-lg hover:shadow-xl border-2'
+              : 'cursor-not-allowed',
+            isLoading && 'cursor-not-allowed'
           )}
+          style={
+            concert.hasAvailableSchedules && !isLoading
+              ? {
+                  backgroundColor: '#3b82f6',
+                  color: '#ffffff',
+                  borderColor: '#2563eb'
+                }
+              : {
+                  backgroundColor: '#e5e7eb',
+                  color: '#9ca3af',
+                  borderColor: '#d1d5db'
+                }
+          }
           aria-label={`${concert.title} 예매하기`}
         >
           {isLoading ? (
@@ -124,7 +149,7 @@ export function ConcertCard({
           ) : concert.hasAvailableSchedules ? (
             <>
               <span>예매하기</span>
-              <div className="ml-2 w-1 h-1 bg-primary rounded-full animate-pulse"></div>
+              <div className="ml-2 w-1 h-1 rounded-full animate-pulse" style={{ backgroundColor: '#ffffff' }}></div>
             </>
           ) : (
             '예매 종료'

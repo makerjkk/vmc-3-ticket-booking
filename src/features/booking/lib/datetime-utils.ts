@@ -6,11 +6,20 @@ import { ko } from 'date-fns/locale';
  */
 export class DateTimeUtils {
   /**
+   * ISO 문자열을 Date 객체로 변환
+   * Supabase의 timestamptz는 ISO 8601 형식으로 반환되므로 (예: 2025-11-10T19:00:00+09:00)
+   * new Date()를 사용하여 파싱하면 브라우저의 로컬 타임존으로 자동 변환됨
+   */
+  private static parseDateTime(dateTimeString: string): Date {
+    return new Date(dateTimeString);
+  }
+
+  /**
    * 회차 시간을 HH:MM 형식으로 포맷
    */
   static formatScheduleTime(dateTimeString: string): string {
     try {
-      const date = parseISO(dateTimeString);
+      const date = this.parseDateTime(dateTimeString);
       return format(date, 'HH:mm');
     } catch (error) {
       console.error('Invalid date format:', dateTimeString);
@@ -36,7 +45,7 @@ export class DateTimeUtils {
    */
   static formatDateKorean(date: Date | string): string {
     try {
-      const dateObj = typeof date === 'string' ? parseISO(date) : date;
+      const dateObj = typeof date === 'string' ? this.parseDateTime(date) : date;
       return format(dateObj, 'yyyy년 MM월 dd일', { locale: ko });
     } catch (error) {
       console.error('Invalid date:', date);
@@ -49,7 +58,7 @@ export class DateTimeUtils {
    */
   static formatDateTimeKorean(dateTimeString: string): string {
     try {
-      const date = parseISO(dateTimeString);
+      const date = this.parseDateTime(dateTimeString);
       return format(date, 'yyyy년 MM월 dd일 HH:mm', { locale: ko });
     } catch (error) {
       console.error('Invalid datetime:', dateTimeString);
@@ -62,7 +71,7 @@ export class DateTimeUtils {
    */
   static getDayOfWeekKorean(date: Date | string): string {
     try {
-      const dateObj = typeof date === 'string' ? parseISO(date) : date;
+      const dateObj = typeof date === 'string' ? this.parseDateTime(date) : date;
       return format(dateObj, 'E', { locale: ko });
     } catch (error) {
       console.error('Invalid date:', date);

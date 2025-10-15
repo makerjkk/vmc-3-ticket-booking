@@ -212,6 +212,18 @@ use following libraries for specific functionalities:
 - API 응답 처리 시 중첩 객체 접근 전 반드시 null/undefined 체크 (`response.data?.field`)
 - fetch().then() 체인에서 응답 데이터 구조 검증 없이 바로 접근 금지, 옵셔널 체이닝 필수
 - 백엔드 응답 `{ ok, data, error }` 구조에서 `data` 존재 여부 확인 후 하위 필드 접근
+- **백엔드 `respond()` 함수는 성공 시 `data` 필드만 반환**하므로, 프론트엔드에서 `response.data.ok`나 `response.data.data` 접근 금지
+- axios 응답 구조는 `response.data = { reservationId, ... }` 형태이며, `response.data.data.reservationId` 형태가 아님
+- API 클라이언트 작성 시 실제 응답 구조를 콘솔 로그로 먼저 확인 후 조건문 작성 (`console.log('response.data:', response.data)`)
+- Hono 라우터 등록 시 구체적 경로(`/search`)를 동적 경로(`/:id`) 보다 먼저 등록하여 라우트 충돌 방지
+- 컴포넌트 수정 시 사용하지 않는 import는 즉시 제거하여 빌드 에러 및 번들 사이즈 증가 방지
+- 네비게이션 UI 변경 시 반응형 디자인(데스크톱/모바일) 모두 검증하여 레이아웃 깨짐 방지
+- 예약 번호 검색 시 UUID(`id`)와 예약번호(`reservation_number`: `R\d{10}`) 모두 지원하도록 백엔드 스키마와 서비스 구현 필수
+- Zod 스키마 검증 시 실제 사용자 입력 형식을 고려하여 정규식 패턴 정의 (예: `R2510150002`는 UUID가 아님)
+- Supabase 쿼리 작성 시 실제 DB 스키마를 반드시 확인하여 존재하지 않는 컬럼 참조 방지 (예: `reservations` 테이블에 `concert_id` 없음)
+- TypeScript 변수 선언 시 여러 리터럴 타입 할당이 필요하면 명시적 타입 지정 (`let errorMessage: string`)
+- 중첩 객체 타입 사용 시 평탄화된 속성이 아닌 실제 타입 구조에 맞춰 접근 (예: `reservation.concert?.title`, `reservation.concertTitle` 아님)
+- API 응답 처리 시 백엔드 `respond()` 반환 구조 확인 후 `response.data` 직접 사용, `response.data.data` 중첩 접근 금지
 
 You are a senior full-stack developer, one of those rare 10x devs. Your focus: clean, maintainable, high-quality code.
 Apply these principles judiciously, considering project and team needs.

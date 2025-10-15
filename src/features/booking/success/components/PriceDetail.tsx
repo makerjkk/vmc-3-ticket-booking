@@ -16,14 +16,23 @@ export function PriceDetail() {
   if (!reservationData) return null;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">결제 정보</h3>
+    <div 
+      className="p-5 rounded-lg"
+      style={{ backgroundColor: '#f8fafc' }}
+    >
+      <div className="flex items-center justify-between mb-5">
+        <h3 
+          className="text-xl font-bold"
+          style={{ color: '#1e293b' }}
+        >
+          결제 정보
+        </h3>
         <Button
           variant="ghost"
           size="sm"
           onClick={handleTogglePriceDetail}
-          className="text-primary hover:text-primary/90"
+          className="font-semibold"
+          style={{ color: '#475569' }}
         >
           {isPriceDetailExpanded ? (
             <>
@@ -38,22 +47,37 @@ export function PriceDetail() {
       </div>
 
       {isPriceDetailExpanded && (
-        <div className="space-y-2 mb-4">
+        <div className="space-y-3 mb-5">
           {reservationData.seats.map((seat) => (
-            <div key={seat.seatNumber} className="flex justify-between text-sm">
-              <span className="text-gray-600">
+            <div 
+              key={seat.seatNumber} 
+              className="flex justify-between text-sm p-3 rounded-lg"
+              style={{ backgroundColor: '#ffffff' }}
+            >
+              <span 
+                className="font-medium"
+                style={{ color: '#64748b' }}
+              >
                 {seat.grade}석 {seat.seatNumber}
               </span>
-              <span className="font-medium">{formatPrice(seat.price)}</span>
+              <span 
+                className="font-bold"
+                style={{ color: '#1e293b' }}
+              >
+                {formatPrice(seat.price)}
+              </span>
             </div>
           ))}
-          <Separator className="my-2" />
+          <Separator className="my-3" style={{ backgroundColor: '#e2e8f0' }} />
         </div>
       )}
 
-      <div className="flex justify-between items-center text-xl font-bold">
-        <span>총 결제 금액</span>
-        <span className="text-primary">{formatPrice(reservationData.totalPrice)}</span>
+      <div 
+        className="flex justify-between items-center text-2xl font-bold p-4 rounded-lg"
+        style={{ backgroundColor: '#ffffff' }}
+      >
+        <span style={{ color: '#1e293b' }}>총 결제 금액</span>
+        <span style={{ color: '#1e293b' }}>{formatPrice(reservationData.totalPrice)}</span>
       </div>
     </div>
   );

@@ -19,7 +19,8 @@ export const ScheduleCard = memo<ScheduleCardProps>(({
   concertId
 }) => {
   const router = useRouter();
-  const scheduleTime = DateTimeUtils.formatScheduleTime(schedule.dateTime);
+  // 백엔드에서 제공하는 한국 시간 기준 time 필드 사용 (fallback으로 dateTime 파싱)
+  const scheduleTime = schedule.time || DateTimeUtils.formatScheduleTime(schedule.dateTime);
   const relativeTime = DateTimeUtils.getRelativeTime(schedule.dateTime);
   const isPast = DateTimeUtils.isPastSchedule(schedule.dateTime);
   

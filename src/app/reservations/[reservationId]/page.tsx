@@ -39,43 +39,61 @@ function ReservationDetailContent() {
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-6">예약 상세</h1>
+    <div 
+      className="min-h-screen py-8 px-4"
+      style={{ backgroundColor: '#ffffff' }}
+    >
+      <div className="container mx-auto max-w-4xl">
+        <h1 
+          className="text-3xl font-bold mb-8"
+          style={{ color: '#1e293b' }}
+        >
+          예약 상세
+        </h1>
 
-      <ReservationInfo reservation={state.reservation} formattedData={derived.formattedData} />
+        <ReservationInfo reservation={state.reservation} formattedData={derived.formattedData} />
 
-      {!state.canCancel && state.cancelReason && (
-        <div className="mt-4">
-          <CancelWarning reason={state.cancelReason} />
-        </div>
-      )}
-
-      <div className="mt-6 flex space-x-4">
-        <Button variant="outline" onClick={handleBackToList}>
-          목록으로 돌아가기
-        </Button>
-
-        {state.canCancel && (
-          <CancelButton
-            disabled={derived.isCancelButtonDisabled}
-            isLoading={state.isCancelling}
-            onClick={actions.openCancelDialog}
-          />
+        {!state.canCancel && state.cancelReason && (
+          <div className="mt-6">
+            <CancelWarning reason={state.cancelReason} />
+          </div>
         )}
+
+        <div className="mt-8 flex gap-4">
+          <Button 
+            variant="outline" 
+            onClick={handleBackToList}
+            className="font-semibold border-2 hover:bg-gray-50"
+            style={{ 
+              borderColor: '#cbd5e1',
+              color: '#475569'
+            }}
+          >
+            목록으로 돌아가기
+          </Button>
+
+          {state.canCancel && (
+            <CancelButton
+              disabled={derived.isCancelButtonDisabled}
+              isLoading={state.isCancelling}
+              onClick={actions.openCancelDialog}
+            />
+          )}
+        </div>
+
+        <CancelDialog
+          open={state.showCancelDialog}
+          reservation={state.reservation}
+          seatsSummary={derived.formattedData.seatsSummary}
+          onConfirm={actions.cancelReservation}
+          onCancel={actions.closeCancelDialog}
+        />
+
+        <SuccessToast
+          message={SUCCESS_MESSAGES.RESERVATION_CANCELLED}
+          show={derived.showSuccessToast}
+        />
       </div>
-
-      <CancelDialog
-        open={state.showCancelDialog}
-        reservation={state.reservation}
-        seatsSummary={derived.formattedData.seatsSummary}
-        onConfirm={actions.cancelReservation}
-        onCancel={actions.closeCancelDialog}
-      />
-
-      <SuccessToast
-        message={SUCCESS_MESSAGES.RESERVATION_CANCELLED}
-        show={derived.showSuccessToast}
-      />
     </div>
   );
 }
