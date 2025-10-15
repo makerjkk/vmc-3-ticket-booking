@@ -18,6 +18,7 @@ import {
   validateSeats,
   createReservation,
   getReservationDetail,
+  cancelReservation,
   searchReservations,
 } from './service';
 import {
@@ -137,6 +138,40 @@ export const registerReservationRoutes = (app: Hono<AppEnv>) => {
       logger.error(`예약 상세 조회 실패: ${errorResult.error.code}`, errorResult.error.message);
     } else {
       logger.info(`예약 상세 조회 성공: ${result.data.concertTitle}`);
+    }
+
+    return respond(c, result);
+  });
+
+  // 예약 취소
+  app.delete('/api/reservations/:reservationId', async (c) => {
+    const reservationId = c.req.param('reservationId');
+
+    // UUID 형식 검증
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(reservationId)) {
+      return respond(
+        c,
+        failure(
+          400,
+          reservationErrorCodes.validationError,
+          '유효하지 않은 예약 ID 형식입니다'
+        )
+      );
+    }
+
+    const supabase = getSupabase(c);
+    const logger = getLogger(c);
+
+    logger.info(`예약 취소 요청: reservationId=${reservationId}`);
+
+    const result = await cancelReservation(supabase, reservationId);
+
+    if (!result.ok) {
+      const errorResult = result as ErrorResult<ReservationServiceError, unknown>;
+      logger.error(`예약 취소 실패: ${errorResult.error.code}`, errorResult.error.message);
+    } else {
+      logger.info(`예약 취소 성공: ${result.data.reservationNumber}`);
     }
 
     return respond(c, result);

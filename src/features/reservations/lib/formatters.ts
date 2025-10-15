@@ -32,3 +32,22 @@ export const getStatusBadgeProps = (
   };
 };
 
+/**
+ * 취소 일시 포맷팅
+ */
+export const formatCancelledAt = (cancelledAt: string | null): string | null => {
+  if (!cancelledAt) return null;
+  return format(new Date(cancelledAt), 'yyyy년 MM월 dd일 HH시 mm분', { locale: ko });
+};
+
+/**
+ * 좌석 요약 (다이얼로그용)
+ */
+export const formatSeatsSummary = (
+  seats: Array<{ seatNumber?: string; grade?: string }>
+): string => {
+  const seatNumbers = seats.map((s) => s.seatNumber).filter(Boolean).join(', ');
+  const seatCount = seats.length;
+  return `${seatNumbers} (총 ${seatCount}석)`;
+};
+

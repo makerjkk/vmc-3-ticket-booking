@@ -11,6 +11,7 @@ import {
 import type {
   CreateReservationRequest,
   ReservationDetailResponse,
+  CancelReservationResponse,
   SearchReservationsRequest,
   SearchReservationsResponse,
 } from './schema';
@@ -181,6 +182,7 @@ export const getReservationDetail = async (
         `
         id,
         reservation_number,
+        concert_id,
         schedule_id,
         seat_ids,
         total_price,
@@ -189,9 +191,11 @@ export const getReservationDetail = async (
         customer_email,
         status,
         created_at,
+        cancelled_at,
         schedules (
           date_time,
           concerts (
+            id,
             title
           )
         )
@@ -209,10 +213,10 @@ export const getReservationDetail = async (
       );
     }
 
-    // 좌석 정보 조회
+    // 좌석 정보 조회 (id 포함)
     const { data: seats, error: seatsError } = await client
       .from(SEATS_TABLE)
-      .select('seat_number, grade, price')
+      .select('id, seat_number, grade, price')
       .in('id', data.seat_ids);
 
     if (seatsError) {
@@ -227,7 +231,7 @@ export const getReservationDetail = async (
     // 타입 안전성을 위한 체크
     const schedules = data.schedules as unknown as {
       date_time: string;
-      concerts: { title: string };
+      concerts: { id: string; title: string };
     };
 
     return success({
@@ -239,19 +243,108 @@ export const getReservationDetail = async (
       totalPrice: data.total_price,
       seatCount: data.seat_ids.length,
       concertTitle: schedules.concerts.title,
+      concertId: schedules.concerts.id,
       scheduleDateTime: schedules.date_time,
+      scheduleId: data.schedule_id,
       seatNumbers: seats?.map((s) => s.seat_number) || [],
       seats:
         seats?.map((s) => ({
+          id: s.id,
           seatNumber: s.seat_number,
           grade: s.grade,
           price: s.price,
         })) || [],
       status: data.status,
       createdAt: data.created_at,
+      cancelledAt: data.cancelled_at,
     });
   } catch (error) {
     console.error('Reservation detail fetch exception:', error);
+    return failure(
+      500,
+      reservationErrorCodes.internalError,
+      '서버 내부 오류가 발생했습니다'
+    );
+  }
+};
+
+/**
+ * 예약 취소
+ */
+export const cancelReservation = async (
+  client: SupabaseClient,
+  reservationId: string
+): Promise<
+  HandlerResult<CancelReservationResponse, ReservationServiceError, unknown>
+> => {
+  try {
+    // RPC 함수 호출 (트랜잭션 기반)
+    const { data: result, error: rpcError } = await client.rpc(
+      'cancel_reservation_rpc',
+      {
+        p_reservation_id: reservationId,
+      }
+    );
+
+    if (rpcError) {
+      console.error('Reservation cancellation error:', rpcError);
+
+      // 에러 메시지 파싱
+      if (rpcError.message?.includes('RESERVATION_NOT_FOUND')) {
+        return failure(
+          404,
+          reservationErrorCodes.reservationNotFound,
+          '예약을 찾을 수 없습니다'
+        );
+      }
+
+      if (rpcError.message?.includes('ALREADY_CANCELLED')) {
+        return failure(
+          400,
+          reservationErrorCodes.alreadyCancelled,
+          '이미 취소된 예약입니다'
+        );
+      }
+
+      if (rpcError.message?.includes('CANNOT_CANCEL_TOO_CLOSE')) {
+        return failure(
+          400,
+          reservationErrorCodes.cannotCancelTooClose,
+          '공연 시작 2시간 전까지만 취소할 수 있습니다'
+        );
+      }
+
+      return failure(
+        500,
+        reservationErrorCodes.cancellationFailed,
+        '예약 취소 중 오류가 발생했습니다'
+      );
+    }
+
+    // 취소된 예약 정보 재조회
+    const { data: reservation, error: fetchError } = await client
+      .from(RESERVATIONS_TABLE)
+      .select('id, reservation_number, status, cancelled_at')
+      .eq('id', reservationId)
+      .single();
+
+    if (fetchError || !reservation) {
+      console.error('Fetch cancelled reservation error:', fetchError);
+      return failure(
+        500,
+        reservationErrorCodes.internalError,
+        '취소된 예약 정보 조회 중 오류가 발생했습니다'
+      );
+    }
+
+    return success({
+      reservationId: reservation.id,
+      reservationNumber: reservation.reservation_number,
+      status: 'cancelled' as const,
+      cancelledAt: reservation.cancelled_at,
+    });
+  } catch (error) {
+    console.error('Reservation cancellation exception:', error);
     return failure(
       500,
       reservationErrorCodes.internalError,

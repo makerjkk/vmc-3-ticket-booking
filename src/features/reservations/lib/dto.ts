@@ -5,6 +5,7 @@ export type {
   CreateReservationRequest,
   CreateReservationResponse,
   ReservationDetailResponse,
+  CancelReservationResponse,
   SearchReservationsRequest,
   SearchReservationsResponse,
   ReservationSearchItem,

@@ -58,10 +58,13 @@ export const ReservationDetailResponseSchema = z.object({
   totalPrice: z.number(),
   seatCount: z.number(),
   concertTitle: z.string(),
+  concertId: z.string().uuid(),
   scheduleDateTime: z.string(),
+  scheduleId: z.string().uuid(),
   seatNumbers: z.array(z.string()),
   seats: z.array(
     z.object({
+      id: z.string().uuid(),
       seatNumber: z.string(),
       grade: z.string(),
       price: z.number(),
@@ -69,6 +72,16 @@ export const ReservationDetailResponseSchema = z.object({
   ),
   status: z.enum(['confirmed', 'cancelled']),
   createdAt: z.string(),
+  cancelledAt: z.string().nullable(),
+});
+
+// 예약 취소 응답 스키마
+export const CancelReservationResponseSchema = z.object({
+  reservationId: z.string().uuid(),
+  reservationNumber: z.string(),
+  status: z.literal('cancelled'),
+  cancelledAt: z.string(),
+  message: z.string().optional(),
 });
 
 // 예약 검색 요청 스키마
@@ -119,6 +132,7 @@ export type ValidateSeatsResponse = z.infer<typeof ValidateSeatsResponseSchema>;
 export type CreateReservationRequest = z.infer<typeof CreateReservationRequestSchema>;
 export type CreateReservationResponse = z.infer<typeof CreateReservationResponseSchema>;
 export type ReservationDetailResponse = z.infer<typeof ReservationDetailResponseSchema>;
+export type CancelReservationResponse = z.infer<typeof CancelReservationResponseSchema>;
 export type SearchReservationsRequest = z.infer<typeof SearchReservationsRequestSchema>;
 export type ReservationSearchItem = z.infer<typeof ReservationSearchItemSchema>;
 export type SearchReservationsResponse = z.infer<typeof SearchReservationsResponseSchema>;

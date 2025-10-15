@@ -13,6 +13,10 @@ export const reservationErrorCodes = {
   networkError: 'NETWORK_ERROR',
   searchError: 'SEARCH_ERROR',
   invalidSearchCriteria: 'INVALID_SEARCH_CRITERIA',
+  alreadyCancelled: 'ALREADY_CANCELLED',
+  cannotCancelTooClose: 'CANNOT_CANCEL_TOO_CLOSE',
+  cannotCancelPastEvent: 'CANNOT_CANCEL_PAST_EVENT',
+  cancellationFailed: 'CANCELLATION_FAILED',
 } as const;
 
 export type ReservationServiceError =
@@ -25,6 +29,9 @@ export const getReservationErrorHttpStatus = (
   switch (errorCode) {
     case reservationErrorCodes.validationError:
     case reservationErrorCodes.invalidJson:
+    case reservationErrorCodes.alreadyCancelled:
+    case reservationErrorCodes.cannotCancelTooClose:
+    case reservationErrorCodes.cannotCancelPastEvent:
       return 400;
     case reservationErrorCodes.reservationNotFound:
       return 404;
@@ -39,6 +46,7 @@ export const getReservationErrorHttpStatus = (
     case reservationErrorCodes.networkError:
     case reservationErrorCodes.searchError:
     case reservationErrorCodes.invalidSearchCriteria:
+    case reservationErrorCodes.cancellationFailed:
     default:
       return 500;
   }
