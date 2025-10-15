@@ -173,7 +173,9 @@ export const CustomerInfoPage = memo<CustomerInfoPageProps>(({
     })
       .then(response => response.json())
       .then(responseData => {
-        if (responseData.ok) {
+        console.log('Reservation API Response:', responseData);
+        
+        if (responseData.ok && responseData.data && responseData.data.reservationId) {
           // 예약 완료 페이지로 이동
           router.push(`/booking/success?reservationId=${responseData.data.reservationId}`);
         } else {

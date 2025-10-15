@@ -1582,6 +1582,56 @@ COMMENT ON FUNCTION create_reservation_with_seats IS '트랜잭션 기반 예약
 
 ---
 
+## 예약 완료 페이지 구현
+
+### 페이지 위치
+- `src/app/booking/success/page.tsx`
+
+### API 엔드포인트
+- `GET /api/reservations/:reservationId` - 예약 상세 조회
+
+### 구현 요구사항
+
+#### 1. URL 파라미터 처리
+```typescript
+const searchParams = useSearchParams();
+const reservationId = searchParams.get('reservationId');
+```
+
+#### 2. 예약 상세 조회
+- `apiClient.get(/api/reservations/${reservationId})`를 통해 예약 정보 조회
+- **중요**: 응답 데이터 접근 시 반드시 null/undefined 체크 (`response.data?.ok`, `response.data?.data`)
+- 로딩 상태 표시 (스피너 또는 스켈레톤 UI)
+- 에러 처리 (404, 500 등)
+
+#### 3. 표시 정보
+- ✅ 예약 번호 (reservationNumber) - 강조 표시
+- ✅ 예약 ID (reservationId) - 보조 정보
+- ✅ 콘서트 제목
+- ✅ 공연 일시 (date-fns로 포맷팅)
+- ✅ 선택 좌석 목록 (좌석 번호, 등급, 가격)
+- ✅ 예약자 정보 (이름, 전화번호, 이메일)
+- ✅ 총 결제 금액
+
+#### 4. 액션 버튼
+- "메인으로 돌아가기" → `router.push('/')`
+- (선택) "예약 조회하기" → `router.push('/reservations')`
+
+#### 5. 에러 처리
+| 상황 | 처리 방법 |
+|------|----------|
+| **reservationId 누락** | 메인 페이지로 리다이렉트 |
+| **API 응답 data 필드 누락** | 옵셔널 체이닝 사용, 에러 메시지 표시 |
+| **예약 정보 조회 실패** | 재시도 버튼 제공, 오류 메시지 표시 |
+| **네트워크 오류** | 재시도 옵션, 사용자 친화적 메시지 |
+
+### 중요 체크포인트
+- ⚠️ **응답 데이터 구조 검증 필수**: `if (response.data?.ok && response.data?.data) { ... }`
+- ⚠️ **옵셔널 체이닝 사용**: `response.data?.data?.reservationId`
+- ⚠️ **Promise 체인 사용**: Client Component에서 `async/await` 금지
+
+---
+
 ## 접근성 체크리스트
 
 - [ ] 모든 입력 필드에 적절한 `label` 연결

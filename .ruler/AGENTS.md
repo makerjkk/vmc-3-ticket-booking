@@ -209,6 +209,9 @@ use following libraries for specific functionalities:
 - Client Component에서 `async/await` 절대 사용 금지, Promise 체인(`.then().catch()`) 사용
 - 백엔드 서비스 작성 전 `supabase/migrations` 파일로 실제 DB 스키마 확인 필수
 - Supabase 타입 에러 발생 시 `@ts-nocheck` 또는 명시적 타입 단언으로 우회
+- API 응답 처리 시 중첩 객체 접근 전 반드시 null/undefined 체크 (`response.data?.field`)
+- fetch().then() 체인에서 응답 데이터 구조 검증 없이 바로 접근 금지, 옵셔널 체이닝 필수
+- 백엔드 응답 `{ ok, data, error }` 구조에서 `data` 존재 여부 확인 후 하위 필드 접근
 
 You are a senior full-stack developer, one of those rare 10x devs. Your focus: clean, maintainable, high-quality code.
 Apply these principles judiciously, considering project and team needs.
