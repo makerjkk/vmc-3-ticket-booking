@@ -5,6 +5,9 @@ export type {
   CreateReservationRequest,
   CreateReservationResponse,
   ReservationDetailResponse,
+  SearchReservationsRequest,
+  SearchReservationsResponse,
+  ReservationSearchItem,
 } from '../backend/schema';
 
 // Backend 에러 코드 재노출

@@ -12,11 +12,13 @@ import {
 import {
   ValidateSeatsRequestSchema,
   CreateReservationRequestSchema,
+  SearchReservationsRequestSchema,
 } from './schema';
 import {
   validateSeats,
   createReservation,
   getReservationDetail,
+  searchReservations,
 } from './service';
 import {
   reservationErrorCodes,
@@ -135,6 +137,47 @@ export const registerReservationRoutes = (app: Hono<AppEnv>) => {
       logger.error(`예약 상세 조회 실패: ${errorResult.error.code}`, errorResult.error.message);
     } else {
       logger.info(`예약 상세 조회 성공: ${result.data.concertTitle}`);
+    }
+
+    return respond(c, result);
+  });
+
+  // 예약 검색
+  app.get('/api/reservations/search', async (c) => {
+    const query = c.req.query();
+    
+    const parsedQuery = SearchReservationsRequestSchema.safeParse({
+      reservationId: query.reservationId,
+      phone: query.phone,
+      email: query.email,
+      page: query.page ? parseInt(query.page) : 1,
+      pageSize: query.pageSize ? parseInt(query.pageSize) : 10,
+    });
+
+    if (!parsedQuery.success) {
+      return respond(
+        c,
+        failure(
+          400,
+          reservationErrorCodes.validationError,
+          '유효하지 않은 검색 조건입니다',
+          parsedQuery.error.format()
+        )
+      );
+    }
+
+    const supabase = getSupabase(c);
+    const logger = getLogger(c);
+
+    logger.info(`예약 검색 요청: ${JSON.stringify(parsedQuery.data)}`);
+
+    const result = await searchReservations(supabase, parsedQuery.data);
+
+    if (!result.ok) {
+      const errorResult = result as ErrorResult<ReservationServiceError, unknown>;
+      logger.error(`예약 검색 실패: ${errorResult.error.code}`, errorResult.error.message);
+    } else {
+      logger.info(`예약 검색 성공: ${result.data.totalCount}건`);
     }
 
     return respond(c, result);

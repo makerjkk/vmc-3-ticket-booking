@@ -11,6 +11,8 @@ import {
 import type {
   CreateReservationRequest,
   ReservationDetailResponse,
+  SearchReservationsRequest,
+  SearchReservationsResponse,
 } from './schema';
 
 // 테이블 이름 상수
@@ -250,6 +252,138 @@ export const getReservationDetail = async (
     });
   } catch (error) {
     console.error('Reservation detail fetch exception:', error);
+    return failure(
+      500,
+      reservationErrorCodes.internalError,
+      '서버 내부 오류가 발생했습니다'
+    );
+  }
+};
+
+/**
+ * 예약 검색
+ */
+export const searchReservations = async (
+  client: SupabaseClient,
+  request: SearchReservationsRequest
+): Promise<
+  HandlerResult<SearchReservationsResponse, ReservationServiceError, unknown>
+> => {
+  try {
+    let query = client
+      .from(RESERVATIONS_TABLE)
+      .select(
+        `
+        id,
+        reservation_number,
+        schedule_id,
+        seat_ids,
+        total_price,
+        customer_name,
+        customer_phone,
+        customer_email,
+        status,
+        created_at,
+        cancelled_at,
+        schedules (
+          date_time,
+          concerts (
+            title
+          )
+        )
+      `,
+        { count: 'exact' }
+      );
+
+    if (request.reservationId) {
+      query = query.eq('id', request.reservationId);
+    } else if (request.phone) {
+      query = query.eq('customer_phone', request.phone);
+    } else if (request.email) {
+      query = query.ilike('customer_email', request.email);
+    }
+
+    const from = (request.page - 1) * request.pageSize;
+    const to = from + request.pageSize - 1;
+    
+    query = query
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('Reservation search error:', error);
+      return failure(
+        500,
+        reservationErrorCodes.searchError,
+        '예약 검색 중 오류가 발생했습니다'
+      );
+    }
+
+    if (!data || data.length === 0) {
+      return success({
+        reservations: [],
+        totalCount: 0,
+        page: request.page,
+        pageSize: request.pageSize,
+        totalPages: 0,
+      });
+    }
+
+    const allSeatIds = data.flatMap(r => r.seat_ids);
+    const { data: seats, error: seatsError } = await client
+      .from(SEATS_TABLE)
+      .select('id, seat_number, grade, price')
+      .in('id', allSeatIds);
+
+    if (seatsError) {
+      console.error('Seat fetch error:', seatsError);
+      return failure(
+        500,
+        reservationErrorCodes.seatFetchError,
+        '좌석 정보 조회 중 오류가 발생했습니다'
+      );
+    }
+
+    const reservations = data.map(r => {
+      const schedules = r.schedules as unknown as {
+        date_time: string;
+        concerts: { title: string };
+      };
+      
+      const reservationSeats = seats?.filter(s => r.seat_ids.includes(s.id)) || [];
+
+      return {
+        id: r.id,
+        reservationNumber: r.reservation_number,
+        concertTitle: schedules.concerts.title,
+        scheduleDateTime: schedules.date_time,
+        customerName: r.customer_name,
+        totalPrice: r.total_price,
+        seatCount: r.seat_ids.length,
+        seats: reservationSeats.map(s => ({
+          seatNumber: s.seat_number,
+          grade: s.grade,
+          price: s.price,
+        })),
+        status: r.status,
+        createdAt: r.created_at,
+        cancelledAt: r.cancelled_at,
+      };
+    });
+
+    const totalPages = Math.ceil((count || 0) / request.pageSize);
+
+    return success({
+      reservations,
+      totalCount: count || 0,
+      page: request.page,
+      pageSize: request.pageSize,
+      totalPages,
+    });
+  } catch (error) {
+    console.error('Reservation search exception:', error);
     return failure(
       500,
       reservationErrorCodes.internalError,

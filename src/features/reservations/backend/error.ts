@@ -11,6 +11,8 @@ export const reservationErrorCodes = {
   internalError: 'INTERNAL_ERROR',
   invalidJson: 'INVALID_JSON',
   networkError: 'NETWORK_ERROR',
+  searchError: 'SEARCH_ERROR',
+  invalidSearchCriteria: 'INVALID_SEARCH_CRITERIA',
 } as const;
 
 export type ReservationServiceError =
@@ -35,6 +37,8 @@ export const getReservationErrorHttpStatus = (
     case reservationErrorCodes.seatFetchError:
     case reservationErrorCodes.internalError:
     case reservationErrorCodes.networkError:
+    case reservationErrorCodes.searchError:
+    case reservationErrorCodes.invalidSearchCriteria:
     default:
       return 500;
   }
