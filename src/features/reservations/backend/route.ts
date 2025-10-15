@@ -1,153 +1,142 @@
-import { Hono } from 'hono';
-import type { AppEnv } from '@/backend/hono/context';
-import { success, failure, respond } from '@/backend/http/response';
+import type { Hono } from 'hono';
 import {
+  failure,
+  respond,
+  type ErrorResult,
+} from '@/backend/http/response';
+import {
+  getLogger,
+  getSupabase,
+  type AppEnv,
+} from '@/backend/hono/context';
+import {
+  ValidateSeatsRequestSchema,
   CreateReservationRequestSchema,
-  SeatSummaryRequestSchema,
 } from './schema';
 import {
+  validateSeats,
   createReservation,
-  getSeatSummary,
-  getConcertSchedule,
+  getReservationDetail,
 } from './service';
+import {
+  reservationErrorCodes,
+  getReservationErrorHttpStatus,
+  type ReservationServiceError,
+} from './error';
 
-const reservationRoutes = new Hono<AppEnv>();
-
-/**
- * POST /api/reservations
- * 새로운 예약을 생성합니다
- */
-reservationRoutes.post(
-  '/',
-  async (c) => {
+export const registerReservationRoutes = (app: Hono<AppEnv>) => {
+  // 좌석 유효성 검증
+  app.post('/api/booking/validate-seats', async (c) => {
+    let requestBody;
     try {
-      const supabase = c.get('supabase');
-      const logger = c.get('logger');
-      
-      // 요청 데이터 파싱 및 검증
-      const body = await c.req.json();
-      const parsedRequest = CreateReservationRequestSchema.safeParse(body);
-      
-      if (!parsedRequest.success) {
-        return respond(c, failure(400, 'VALIDATION_ERROR', '요청 데이터가 올바르지 않습니다'));
-      }
-      
-      const request = parsedRequest.data;
-
-      logger.info('Creating reservation', { 
-        concertId: request.concertId,
-        scheduleId: request.scheduleId,
-        seatCount: request.seatIds.length,
-        customerPhone: request.customerInfo.phone,
-      });
-
-      const reservation = await createReservation(supabase, request);
-
-      logger.info('Reservation created successfully', {
-        reservationId: reservation.reservationId,
-        reservationNumber: reservation.reservationNumber,
-      });
-
-      return respond(c, success(reservation, 201));
+      requestBody = await c.req.json();
     } catch (error) {
-      const logger = c.get('logger');
-      const errorMessage = error instanceof Error ? error.message : '예약 생성 중 오류가 발생했습니다';
-      
-      logger.error('Reservation creation failed', { 
-        error: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-
-      return respond(c, failure(400, 'RESERVATION_ERROR', errorMessage));
+      return respond(
+        c,
+        failure(400, reservationErrorCodes.invalidJson, '유효하지 않은 JSON 형식입니다')
+      );
     }
-  }
-);
 
-/**
- * POST /api/schedules/:scheduleId/seats/summary
- * 선택된 좌석들의 요약 정보를 가져옵니다
- */
-reservationRoutes.post(
-  '/schedules/:scheduleId/seats/summary',
-  async (c) => {
+    const parsedBody = ValidateSeatsRequestSchema.safeParse(requestBody);
+
+    if (!parsedBody.success) {
+      return respond(
+        c,
+        failure(
+          400,
+          reservationErrorCodes.validationError,
+          '유효하지 않은 요청 데이터입니다',
+          parsedBody.error.format()
+        )
+      );
+    }
+
+    const supabase = getSupabase(c);
+    const logger = getLogger(c);
+
+    const { scheduleId, seatIds } = parsedBody.data;
+
+    logger.info(
+      `좌석 유효성 검증 요청: scheduleId=${scheduleId}, seatIds=${seatIds.join(',')}`
+    );
+
+    const result = await validateSeats(supabase, scheduleId, seatIds);
+
+    if (!result.ok) {
+      const errorResult = result as ErrorResult<ReservationServiceError, unknown>;
+      logger.error(`좌석 유효성 검증 실패: ${errorResult.error.code}`, errorResult.error.message);
+    } else {
+      logger.info(`좌석 유효성 검증 성공: valid=${result.data.valid}`);
+    }
+
+    return respond(c, result);
+  });
+
+  // 예약 생성
+  app.post('/api/booking/reserve', async (c) => {
+    let requestBody;
     try {
-      const supabase = c.get('supabase');
-      const logger = c.get('logger');
-      const scheduleId = c.req.param('scheduleId');
-      
-      // 요청 데이터 파싱 및 검증
-      const body = await c.req.json();
-      const parsedRequest = SeatSummaryRequestSchema.safeParse(body);
-      
-      if (!parsedRequest.success) {
-        return respond(c, failure(400, 'VALIDATION_ERROR', '요청 데이터가 올바르지 않습니다'));
-      }
-      
-      const request = parsedRequest.data;
-
-      if (!scheduleId) {
-        return respond(c, failure(400, 'VALIDATION_ERROR', '스케줄 ID가 필요합니다'));
-      }
-
-      logger.info('Getting seat summary', { 
-        scheduleId,
-        seatIds: request.seatIds,
-      });
-
-      const summary = await getSeatSummary(supabase, scheduleId, request);
-
-      return respond(c, success(summary));
+      requestBody = await c.req.json();
     } catch (error) {
-      const logger = c.get('logger');
-      const errorMessage = error instanceof Error ? error.message : '좌석 요약 정보 조회 중 오류가 발생했습니다';
-      
-      logger.error('Seat summary failed', { 
-        error: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-
-      return respond(c, failure(400, 'SEAT_SUMMARY_ERROR', errorMessage));
+      return respond(
+        c,
+        failure(400, reservationErrorCodes.invalidJson, '유효하지 않은 JSON 형식입니다')
+      );
     }
-  }
-);
 
-/**
- * GET /api/concerts/:concertId/schedule/:scheduleId
- * 콘서트와 스케줄 정보를 가져옵니다
- */
-reservationRoutes.get(
-  '/concerts/:concertId/schedule/:scheduleId',
-  async (c) => {
-    try {
-      const supabase = c.get('supabase');
-      const logger = c.get('logger');
-      const concertId = c.req.param('concertId');
-      const scheduleId = c.req.param('scheduleId');
+    const parsedBody = CreateReservationRequestSchema.safeParse(requestBody);
 
-      if (!concertId || !scheduleId) {
-        return respond(c, failure(400, 'VALIDATION_ERROR', '콘서트 ID와 스케줄 ID가 필요합니다'));
-      }
-
-      logger.info('Getting concert schedule', { 
-        concertId,
-        scheduleId,
-      });
-
-      const concertSchedule = await getConcertSchedule(supabase, concertId, scheduleId);
-
-      return respond(c, success(concertSchedule));
-    } catch (error) {
-      const logger = c.get('logger');
-      const errorMessage = error instanceof Error ? error.message : '콘서트 정보 조회 중 오류가 발생했습니다';
-      
-      logger.error('Concert schedule failed', { 
-        error: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-
-      return respond(c, failure(400, 'CONCERT_SCHEDULE_ERROR', errorMessage));
+    if (!parsedBody.success) {
+      return respond(
+        c,
+        failure(
+          400,
+          reservationErrorCodes.validationError,
+          '유효하지 않은 요청 데이터입니다',
+          parsedBody.error.format()
+        )
+      );
     }
-  }
-);
 
-export { reservationRoutes };
+    const supabase = getSupabase(c);
+    const logger = getLogger(c);
+
+    const request = parsedBody.data;
+
+    logger.info(
+      `예약 생성 요청: scheduleId=${request.scheduleId}, customer=${request.customerName}`
+    );
+
+    const result = await createReservation(supabase, request);
+
+    if (!result.ok) {
+      const errorResult = result as ErrorResult<ReservationServiceError, unknown>;
+      logger.error(`예약 생성 실패: ${errorResult.error.code}`, errorResult.error.message);
+    } else {
+      logger.info(`예약 생성 성공: reservationId=${result.data.reservationId}`);
+    }
+
+    return respond(c, result);
+  });
+
+  // 예약 상세 조회
+  app.get('/api/reservations/:reservationId', async (c) => {
+    const reservationId = c.req.param('reservationId');
+
+    const supabase = getSupabase(c);
+    const logger = getLogger(c);
+
+    logger.info(`예약 상세 조회 요청: reservationId=${reservationId}`);
+
+    const result = await getReservationDetail(supabase, reservationId);
+
+    if (!result.ok) {
+      const errorResult = result as ErrorResult<ReservationServiceError, unknown>;
+      logger.error(`예약 상세 조회 실패: ${errorResult.error.code}`, errorResult.error.message);
+    } else {
+      logger.info(`예약 상세 조회 성공: ${result.data.concertTitle}`);
+    }
+
+    return respond(c, result);
+  });
+};

@@ -5,7 +5,7 @@ import { withSupabase } from '@/backend/middleware/supabase';
 import { registerExampleRoutes } from '@/features/example/backend/route';
 import { registerConcertRoutes } from '@/features/concerts/backend/route';
 import { registerScheduleRoutes } from '@/features/booking/backend/route';
-import { reservationRoutes } from '@/features/reservations/backend/route';
+import { registerReservationRoutes } from '@/features/reservations/backend/route';
 import type { AppEnv } from '@/backend/hono/context';
 
 let singletonApp: Hono<AppEnv> | null = null;
@@ -24,9 +24,7 @@ export const createHonoApp = () => {
   registerExampleRoutes(app);
   registerConcertRoutes(app);
   registerScheduleRoutes(app);
-  
-  // 예약 관련 라우터 등록
-  app.route('/api', reservationRoutes);
+  registerReservationRoutes(app);
 
   singletonApp = app;
 

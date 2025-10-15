@@ -3,6 +3,7 @@
 import React, { memo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SeatSelectionProvider } from '../context/seat-selection-context';
+import { BookingCompletionProvider } from '../context/booking-completion-context';
 import { SeatGrid } from './seat-grid';
 import { BookingInfo } from './booking-info';
 import { CompleteButton } from './complete-button';
@@ -115,51 +116,53 @@ export const SeatSelectionPage = memo<SeatSelectionPageProps>(({
         maxSeats: 4,
         pollingInterval: 3000,
         autoSave: true,
-        enableWebSocket: false, // 현재는 폴링만 사용
+        enableWebSocket: false,
         enableAnalytics: false,
       }}
       onError={handleError}
       onSelectionComplete={handleSelectionComplete}
       onConflictDetected={handleConflictDetected}
     >
-      <div className={cn('min-h-screen bg-gray-50', className)}>
-        {/* 실시간 동기화 핸들러 */}
-        <SeatSyncHandler scheduleId={scheduleId} />
+      <BookingCompletionProvider>
+        <div className={cn('min-h-screen bg-gray-50', className)}>
+          {/* 실시간 동기화 핸들러 */}
+          <SeatSyncHandler scheduleId={scheduleId} />
 
-        {/* 메인 컨텐츠 */}
-        <div className="container mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* 좌석 그리드 (좌측 2/3) */}
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-sm border p-6">
-                <div className="mb-6">
-                  <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                    좌석 선택
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    원하시는 좌석을 선택해주세요 (최대 4석)
-                  </p>
+          {/* 메인 컨텐츠 */}
+          <div className="container mx-auto px-4 py-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* 좌석 그리드 (좌측 2/3) */}
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-lg shadow-sm border p-6">
+                  <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                      좌석 선택
+                    </h1>
+                    <p className="text-sm text-gray-600">
+                      원하시는 좌석을 선택해주세요 (최대 4석)
+                    </p>
+                  </div>
+
+                  <SeatGrid />
                 </div>
+              </div>
 
-                <SeatGrid />
+              {/* 예약 정보 및 완료 버튼 (우측 1/3) */}
+              <div className="space-y-4">
+                {/* 예약 정보 */}
+                <BookingInfo scheduleId={scheduleId} />
+
+                {/* 완료 버튼 */}
+                <CompleteButton scheduleId={scheduleId} />
               </div>
             </div>
-
-            {/* 예약 정보 및 완료 버튼 (우측 1/3) */}
-            <div className="space-y-4">
-              {/* 예약 정보 */}
-              <BookingInfo />
-
-              {/* 완료 버튼 */}
-              <CompleteButton onComplete={handleSelectionComplete} />
-            </div>
           </div>
-        </div>
 
-        {/* 전역 UI 컴포넌트들 */}
-        <SeatSelectionTooltip />
-        <SeatSelectionAlert />
-      </div>
+          {/* 전역 UI 컴포넌트들 */}
+          <SeatSelectionTooltip />
+          <SeatSelectionAlert />
+        </div>
+      </BookingCompletionProvider>
     </SeatSelectionProvider>
   );
 });

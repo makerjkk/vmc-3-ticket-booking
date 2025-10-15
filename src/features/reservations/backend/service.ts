@@ -1,350 +1,259 @@
-// @ts-nocheck - Supabase 타입 시스템 문제로 타입 체크 비활성화
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/lib/supabase/types';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  failure,
+  success,
+  type HandlerResult,
+} from '@/backend/http/response';
+import {
+  reservationErrorCodes,
+  type ReservationServiceError,
+} from './error';
 import type {
   CreateReservationRequest,
-  CreateReservationResponse,
-  SeatSummaryRequest,
-  SeatSummaryResponse,
-  ConcertScheduleResponse,
+  ReservationDetailResponse,
 } from './schema';
 
-type DatabaseClient = SupabaseClient<Database>;
+// 테이블 이름 상수
+const RESERVATIONS_TABLE = 'reservations';
+const SEATS_TABLE = 'seats';
+const SCHEDULES_TABLE = 'schedules';
+const CONCERTS_TABLE = 'concerts';
 
 /**
- * 선택된 좌석들의 요약 정보를 가져옵니다
+ * 좌석 유효성 검증
  */
-export async function getSeatSummary(
-  supabase: DatabaseClient,
+export const validateSeats = async (
+  client: SupabaseClient,
   scheduleId: string,
-  request: SeatSummaryRequest
-): Promise<SeatSummaryResponse> {
-  const { seatIds } = request;
-
-  // 좌석 정보 조회
-  const { data: seats, error } = await supabase
-    .from('seats')
-    .select(`
-      id,
-      seat_number,
-      row_name,
-      seat_index,
-      grade,
-      price,
-      status
-    `)
-    .eq('schedule_id', scheduleId)
-    .in('id', seatIds);
-
-  if (error) {
-    throw new Error(`좌석 정보 조회 실패: ${error.message}`);
-  }
-
-  if (!seats || seats.length === 0) {
-    throw new Error('선택한 좌석을 찾을 수 없습니다');
-  }
-
-  if (seats.length !== seatIds.length) {
-    throw new Error('일부 좌석을 찾을 수 없습니다');
-  }
-
-  // 좌석 상태 검증
-  type Seat = {
-    id: string;
-    seat_number: string;
-    row_name: string | null;
-    seat_index: number;
-    grade: string | null;
-    price: number;
-    status: string | null;
-  };
-  
-  const seatsData = seats as unknown as Seat[];
-  const unavailableSeats = seatsData.filter(seat => seat.status !== 'available');
-  if (unavailableSeats.length > 0) {
-    throw new Error('선택한 좌석 중 일부가 이미 예약되었습니다');
-  }
-
-  // 응답 데이터 변환
-  const responseSeats = seatsData.map(seat => ({
-    id: seat.id,
-    seatNumber: seat.seat_number,
-    rowName: seat.row_name,
-    seatIndex: seat.seat_index,
-    grade: seat.grade as 'R' | 'S' | 'A',
-    price: seat.price,
-    status: (seat.status || 'available') as 'available' | 'reserved' | 'maintenance',
-  }));
-
-  const totalPrice = responseSeats.reduce((sum, seat) => sum + seat.price, 0);
-  const availableCount = responseSeats.filter(seat => seat.status === 'available').length;
-
-  return {
-    seats: responseSeats,
-    totalPrice,
-    availableCount,
-  };
-}
-
-/**
- * 콘서트와 스케줄 정보를 가져옵니다
- */
-export async function getConcertSchedule(
-  supabase: DatabaseClient,
-  concertId: string,
-  scheduleId: string
-): Promise<ConcertScheduleResponse> {
-  // 콘서트 정보 조회
-  const { data: concert, error: concertError } = await supabase
-    .from('concerts')
-    .select(`
-      id,
-      title,
-      description,
-      poster_image_url
-    `)
-    .eq('id', concertId)
-    .single();
-
-  if (concertError) {
-    throw new Error(`콘서트 정보 조회 실패: ${concertError.message}`);
-  }
-
-  if (!concert) {
-    throw new Error('콘서트를 찾을 수 없습니다');
-  }
-
-  // 스케줄 정보 조회
-  const { data: schedule, error: scheduleError } = await supabase
-    .from('schedules')
-    .select(`
-      id,
-      date_time
-    `)
-    .eq('id', scheduleId)
-    .eq('concert_id', concertId)
-    .single();
-
-  if (scheduleError) {
-    throw new Error(`스케줄 정보 조회 실패: ${scheduleError.message}`);
-  }
-
-  if (!schedule) {
-    throw new Error('스케줄을 찾을 수 없습니다');
-  }
-
-  // 좌석 통계 조회
-  const { data: seatStats, error: seatStatsError } = await supabase
-    .from('seats')
-    .select('status')
-    .eq('schedule_id', scheduleId);
-
-  if (seatStatsError) {
-    throw new Error(`좌석 통계 조회 실패: ${seatStatsError.message}`);
-  }
-
-  const totalSeats = seatStats?.length || 0;
-  const availableSeats = (seatStats as unknown as { status: string | null }[])?.filter(seat => seat.status === 'available').length || 0;
-
-  type Concert = {
-    id: string;
-    title: string;
-    description: string | null;
-    poster_image_url: string | null;
-  };
-  
-  type Schedule = {
-    id: string;
-    date_time: string;
-  };
-  
-  const concertData = concert as unknown as Concert;
-  const scheduleData = schedule as unknown as Schedule;
-
-  // date_time을 date와 time으로 분리
-  const dateTime = new Date(scheduleData.date_time);
-  const date = dateTime.toISOString().split('T')[0]; // YYYY-MM-DD
-  const time = dateTime.toTimeString().split(' ')[0].slice(0, 5); // HH:MM
-
-  return {
-    concert: {
-      id: concertData.id,
-      title: concertData.title,
-      venue: '공연장 정보 없음', // 기본값
-      description: concertData.description || undefined,
-      imageUrl: concertData.poster_image_url || undefined,
-    },
-    schedule: {
-      id: scheduleData.id,
-      date,
-      time,
-      availableSeats,
-      totalSeats,
-    },
-  };
-}
-
-/**
- * 예약 번호를 생성합니다
- */
-function generateReservationNumber(): string {
-  const date = new Date();
-  const year = date.getFullYear().toString().slice(-2);
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  
-  return `R${year}${month}${day}${random}`;
-}
-
-/**
- * 새로운 예약을 생성합니다
- */
-export async function createReservation(
-  supabase: DatabaseClient,
-  request: CreateReservationRequest
-): Promise<CreateReservationResponse> {
-  const { concertId, scheduleId, seatIds, customerInfo } = request;
-
-  // 트랜잭션 시작을 위한 RPC 함수 호출
-  // 실제로는 Supabase에서 트랜잭션을 직접 지원하지 않으므로,
-  // 여러 단계로 나누어 처리하고 오류 시 롤백 로직을 구현해야 합니다.
-
+  seatIds: string[]
+): Promise<
+  HandlerResult<
+    { valid: boolean; invalidSeats?: string[] },
+    ReservationServiceError,
+    unknown
+  >
+> => {
   try {
-    // 1. 좌석 상태 재확인 및 락
-    const { data: seats, error: seatError } = await supabase
-      .from('seats')
-      .select(`
-        id,
-        seat_number,
-        row_name,
-        seat_index,
-        grade,
-        price,
-        status
-      `)
+    // 좌석 상태 확인
+    const { data: seats, error: seatsError } = await client
+      .from(SEATS_TABLE)
+      .select('id, status')
       .eq('schedule_id', scheduleId)
       .in('id', seatIds);
 
-    if (seatError) {
-      throw new Error(`좌석 정보 조회 실패: ${seatError.message}`);
+    if (seatsError) {
+      console.error('Seat validation error:', seatsError);
+      return failure(
+        500,
+        reservationErrorCodes.seatValidationError,
+        '좌석 검증 중 오류가 발생했습니다'
+      );
     }
 
-    if (!seats || seats.length !== seatIds.length) {
-      throw new Error('일부 좌석을 찾을 수 없습니다');
+    // 모든 좌석이 존재하고 available 상태인지 확인
+    const invalidSeats = seatIds.filter((seatId) => {
+      const seat = seats?.find((s) => s.id === seatId);
+      return !seat || seat.status !== 'available';
+    });
+
+    if (invalidSeats.length > 0) {
+      return success({
+        valid: false,
+        invalidSeats,
+      });
     }
 
-    // 좌석 상태 검증
-    type ReservationSeat = {
-      id: string;
-      seat_number: string;
-      row_name: string | null;
-      seat_index: number;
-      grade: string | null;
-      price: number;
-      status: string | null;
-    };
-    
-    const seatsData = seats as unknown as ReservationSeat[];
-    const unavailableSeats = seatsData.filter(seat => seat.status !== 'available');
-    if (unavailableSeats.length > 0) {
-      throw new Error('선택한 좌석 중 일부가 이미 예약되었습니다. 다시 선택해주세요.');
-    }
+    return success({ valid: true });
+  } catch (error) {
+    console.error('Seat validation exception:', error);
+    return failure(
+      500,
+      reservationErrorCodes.internalError,
+      '서버 내부 오류가 발생했습니다'
+    );
+  }
+};
 
-    // 2. 콘서트 및 스케줄 정보 조회
-    const concertSchedule = await getConcertSchedule(supabase, concertId, scheduleId);
-
-    // 3. 중복 예약 확인 (같은 휴대폰 번호로 같은 공연 예약)
-    const { data: existingReservation, error: duplicateError } = await supabase
-      .from('reservations')
+/**
+ * 예약 생성 (트랜잭션)
+ */
+export const createReservation = async (
+  client: SupabaseClient,
+  request: CreateReservationRequest
+): Promise<
+  HandlerResult<
+    { reservationId: string; reservationNumber: string },
+    ReservationServiceError,
+    unknown
+  >
+> => {
+  try {
+    // 1. 중복 예약 확인
+    const { data: existingReservation, error: checkError } = await client
+      .from(RESERVATIONS_TABLE)
       .select('id')
-      .eq('schedule_id', scheduleId)
-      .eq('customer_phone', customerInfo.phone)
+      .eq('schedule_id', request.scheduleId)
+      .eq('customer_phone', request.customerPhone)
       .eq('status', 'confirmed')
-      .limit(1);
+      .maybeSingle();
 
-    if (duplicateError) {
-      throw new Error(`중복 예약 확인 실패: ${duplicateError.message}`);
+    if (checkError) {
+      console.error('Duplicate check error:', checkError);
+      return failure(
+        500,
+        reservationErrorCodes.duplicateCheckError,
+        '중복 예약 확인 중 오류가 발생했습니다'
+      );
     }
 
-    if (existingReservation && existingReservation.length > 0) {
-      throw new Error('이미 해당 공연에 예약이 있습니다. 한 공연당 하나의 예약만 가능합니다.');
+    if (existingReservation) {
+      return failure(
+        409,
+        reservationErrorCodes.duplicateReservation,
+        '이미 해당 공연에 대한 예약이 존재합니다'
+      );
     }
 
-    // 4. 예약 생성
-    const reservationId = uuidv4();
-    const reservationNumber = generateReservationNumber();
-    const totalPrice = seatsData.reduce((sum, seat) => sum + seat.price, 0);
-
-    const { error: reservationError } = await supabase
-      .from('reservations')
-      .insert({
-        id: reservationId,
-        reservation_number: reservationNumber,
-        concert_id: concertId,
-        schedule_id: scheduleId,
-        customer_name: customerInfo.name,
-        customer_phone: customerInfo.phone,
-        customer_email: customerInfo.email,
-        total_price: totalPrice,
-        status: 'confirmed',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as any);
+    // 2. 트랜잭션 시작 (RPC 함수 사용)
+    const { data: result, error: reservationError } = await client.rpc(
+      'create_reservation_with_seats',
+      {
+        p_schedule_id: request.scheduleId,
+        p_seat_ids: request.seatIds,
+        p_customer_name: request.customerName,
+        p_customer_phone: request.customerPhone,
+        p_customer_email: request.customerEmail || '',
+        p_total_price: request.totalPrice,
+      }
+    );
 
     if (reservationError) {
-      throw new Error(`예약 생성 실패: ${reservationError.message}`);
+      console.error('Reservation creation error:', reservationError);
+
+      // 동시성 충돌 처리
+      if (
+        reservationError.message &&
+        reservationError.message.includes('SEATS_NOT_AVAILABLE')
+      ) {
+        return failure(
+          409,
+          reservationErrorCodes.seatsNotAvailable,
+          '선택하신 좌석이 이미 예약되었습니다'
+        );
+      }
+
+      return failure(
+        500,
+        reservationErrorCodes.reservationCreationError,
+        '예약 생성 중 오류가 발생했습니다'
+      );
     }
 
-    // 5. 좌석 상태를 'reserved'로 업데이트
-    // @ts-ignore - Supabase 타입 추론 문제 우회
-    const { error: seatUpdateError } = await supabase
-      .from('seats')
-      .update({ 
-        status: 'reserved',
-        updated_at: new Date().toISOString(),
-      })
-      .in('id', seatIds);
+    return success({
+      reservationId: result.reservation_id,
+      reservationNumber: result.reservation_number,
+    });
+  } catch (error) {
+    console.error('Reservation creation exception:', error);
+    return failure(
+      500,
+      reservationErrorCodes.internalError,
+      '서버 내부 오류가 발생했습니다'
+    );
+  }
+};
 
-    if (seatUpdateError) {
-      // 예약 롤백
-      await supabase
-        .from('reservations')
-        .delete()
-        .eq('id', reservationId);
-      
-      throw new Error(`좌석 예약 처리 실패: ${seatUpdateError.message}`);
+/**
+ * 예약 상세 조회 (완료 페이지용)
+ */
+export const getReservationDetail = async (
+  client: SupabaseClient,
+  reservationId: string
+): Promise<
+  HandlerResult<ReservationDetailResponse, ReservationServiceError, unknown>
+> => {
+  try {
+    const { data, error } = await client
+      .from(RESERVATIONS_TABLE)
+      .select(
+        `
+        id,
+        reservation_number,
+        schedule_id,
+        seat_ids,
+        total_price,
+        customer_name,
+        customer_phone,
+        customer_email,
+        status,
+        created_at,
+        schedules (
+          date_time,
+          concerts (
+            title
+          )
+        )
+      `
+      )
+      .eq('id', reservationId)
+      .single();
+
+    if (error || !data) {
+      console.error('Reservation fetch error:', error);
+      return failure(
+        404,
+        reservationErrorCodes.reservationNotFound,
+        '예약을 찾을 수 없습니다'
+      );
     }
 
-    // 6. 예약-좌석 관계 테이블에 데이터 삽입 (만약 있다면)
-    // 현재 스키마에는 없지만, 필요시 추가할 수 있습니다.
+    // 좌석 정보 조회
+    const { data: seats, error: seatsError } = await client
+      .from(SEATS_TABLE)
+      .select('seat_number, grade, price')
+      .in('id', data.seat_ids);
 
-    // 7. 응답 데이터 구성
-    const responseSeats = seats.map(seat => ({
-      id: seat.id,
-      seatNumber: seat.seat_number,
-      rowName: seat.row_name,
-      seatIndex: seat.seat_index,
-      grade: seat.grade as 'R' | 'S' | 'A',
-      price: seat.price,
-    }));
+    if (seatsError) {
+      console.error('Seat fetch error:', seatsError);
+      return failure(
+        500,
+        reservationErrorCodes.seatFetchError,
+        '좌석 정보 조회 중 오류가 발생했습니다'
+      );
+    }
 
-    return {
-      reservationId,
-      reservationNumber,
-      status: 'confirmed' as const,
-      totalPrice,
-      createdAt: new Date().toISOString(),
-      customerInfo,
-      seats: responseSeats,
-      concert: concertSchedule.concert,
-      schedule: concertSchedule.schedule,
+    // 타입 안전성을 위한 체크
+    const schedules = data.schedules as unknown as {
+      date_time: string;
+      concerts: { title: string };
     };
 
+    return success({
+      reservationId: data.id,
+      reservationNumber: data.reservation_number,
+      customerName: data.customer_name,
+      customerPhone: data.customer_phone,
+      customerEmail: data.customer_email,
+      totalPrice: data.total_price,
+      seatCount: data.seat_ids.length,
+      concertTitle: schedules.concerts.title,
+      scheduleDateTime: schedules.date_time,
+      seatNumbers: seats?.map((s) => s.seat_number) || [],
+      seats:
+        seats?.map((s) => ({
+          seatNumber: s.seat_number,
+          grade: s.grade,
+          price: s.price,
+        })) || [],
+      status: data.status,
+      createdAt: data.created_at,
+    });
   } catch (error) {
-    // 에러 발생 시 로깅
-    console.error('Reservation creation failed:', error);
-    throw error;
+    console.error('Reservation detail fetch exception:', error);
+    return failure(
+      500,
+      reservationErrorCodes.internalError,
+      '서버 내부 오류가 발생했습니다'
+    );
   }
-}
+};

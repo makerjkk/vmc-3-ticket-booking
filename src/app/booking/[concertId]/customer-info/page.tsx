@@ -1,22 +1,16 @@
 'use client';
 
 import React from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
 import { CustomerInfoPage } from '@/features/booking/components/customer-info-page';
 
-interface CustomerInfoPageProps {
-  params: Promise<{
-    concertId: string;
-  }>;
-  searchParams: Promise<{
-    scheduleId?: string;
-    seats?: string;
-  }>;
-}
-
-export default async function CustomerInfo({ params, searchParams }: CustomerInfoPageProps) {
-  // params와 searchParams를 await로 처리
-  const { concertId } = await params;
-  const { scheduleId, seats } = await searchParams;
+export default function CustomerInfo() {
+  const params = useParams();
+  const searchParams = useSearchParams();
+  
+  const concertId = params.concertId as string;
+  const scheduleId = searchParams.get('scheduleId');
+  const seats = searchParams.get('seats');
 
   // 필수 파라미터 검증
   if (!scheduleId || !seats) {

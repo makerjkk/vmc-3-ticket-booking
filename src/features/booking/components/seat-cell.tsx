@@ -1,7 +1,7 @@
 'use client';
 
 import React, { memo } from 'react';
-import { Check, AlertTriangle } from 'lucide-react';
+import { Check, AlertTriangle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Seat, SeatStatus } from '../lib/dto';
 
@@ -49,13 +49,13 @@ export const SeatCell = memo<SeatCellProps>(({
     const baseClasses = [
       'seat-cell',
       'relative',
-      'w-8 h-8',
-      'rounded-sm',
-      'border',
+      'w-[26px] h-[26px]',
+      'rounded',
+      'border-2',
       'flex items-center justify-center',
-      'text-xs font-medium',
+      'text-[10px] font-semibold',
       'transition-all duration-150 ease-out',
-      'focus:outline-none focus:ring-2 focus:ring-offset-2',
+      'focus:outline-none focus:ring-1 focus:ring-offset-1',
       'select-none',
     ];
 
@@ -72,19 +72,20 @@ export const SeatCell = memo<SeatCellProps>(({
       
       case 'selected':
         baseClasses.push(
-          'bg-primary border-primary text-primary-foreground',
-          'hover:bg-primary/90',
+          'bg-green-600 border-green-700 text-white',
+          'hover:bg-green-700',
           'cursor-pointer',
-          'focus:ring-primary',
-          'shadow-sm'
+          'focus:ring-green-500',
+          'shadow-md',
+          'ring-2 ring-green-400'
         );
         break;
       
       case 'reserved':
         baseClasses.push(
-          'bg-gray-400 border-gray-500 text-gray-100',
+          'bg-gray-500 border-gray-600 text-white',
           'cursor-not-allowed',
-          'opacity-60'
+          'opacity-80'
         );
         break;
       
@@ -106,21 +107,21 @@ export const SeatCell = memo<SeatCellProps>(({
         break;
     }
 
-    // 등급별 추가 스타일
+    // 등급별 추가 스타일 (진한 색상으로 구분)
     switch (seat.grade) {
       case 'R':
         if (status === 'available') {
-          baseClasses.push('ring-1 ring-primary/20');
+          baseClasses.push('bg-purple-100 border-purple-300 ring-1 ring-purple-400');
         }
         break;
       case 'S':
         if (status === 'available') {
-          baseClasses.push('ring-1 ring-cyan-500/20');
+          baseClasses.push('bg-cyan-100 border-cyan-300 ring-1 ring-cyan-400');
         }
         break;
       case 'A':
         if (status === 'available') {
-          baseClasses.push('ring-1 ring-pink-500/20');
+          baseClasses.push('bg-amber-100 border-amber-300 ring-1 ring-amber-400');
         }
         break;
     }
@@ -192,15 +193,23 @@ export const SeatCell = memo<SeatCellProps>(({
       data-seat-status={status}
       data-seat-grade={seat.grade}
     >
-      {/* 좌석 번호 */}
-      <span className="seat-number">
-        {getSeatDisplayNumber()}
-      </span>
+      {/* 좌석 번호 또는 예약 표시 */}
+      {status === 'reserved' ? (
+        <X 
+          className="w-5 h-5 text-white" 
+          strokeWidth={3.5}
+          aria-hidden="true"
+        />
+      ) : (
+        <span className="seat-number">
+          {getSeatDisplayNumber()}
+        </span>
+      )}
 
       {/* 선택 표시 아이콘 */}
       {isSelected && (
         <Check 
-          className="absolute -top-1 -right-1 w-3 h-3 text-white bg-primary rounded-full p-0.5" 
+          className="absolute -top-0.5 -right-0.5 w-3 h-3 text-white bg-primary rounded-full p-0.5" 
           aria-hidden="true"
         />
       )}
@@ -208,7 +217,7 @@ export const SeatCell = memo<SeatCellProps>(({
       {/* 충돌 표시 아이콘 */}
       {isConflict && (
         <AlertTriangle 
-          className="absolute -top-1 -right-1 w-3 h-3 text-red-600 bg-white rounded-full p-0.5" 
+          className="absolute -top-0.5 -right-0.5 w-3 h-3 text-red-600 bg-white rounded-full p-0.5" 
           aria-hidden="true"
         />
       )}

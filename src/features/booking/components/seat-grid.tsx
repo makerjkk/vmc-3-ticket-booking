@@ -34,14 +34,14 @@ const SeatRow = memo<{
   getSeatClassName
 }) => {
   return (
-    <div className="flex items-center gap-2 mb-2" role="row">
+    <div className="flex items-center gap-1.5 mb-1" role="row">
       {/* 행 라벨 */}
-      <div className="w-8 text-center text-sm font-medium text-gray-600 flex-shrink-0">
+      <div className="w-7 text-center text-sm font-semibold text-gray-700 flex-shrink-0">
         {rowName}
       </div>
       
       {/* 좌석들 */}
-      <div className="flex gap-1 flex-wrap" role="presentation">
+      <div className="flex gap-0.5" role="presentation">
         {seats.map((seat) => {
           const status = seatStatusMap[seat.id] || 'available';
           const isSelected = status === 'selected';
@@ -152,19 +152,23 @@ export const SeatGrid = memo<SeatGridProps>(({ className }) => {
     <div className={`space-y-6 ${className}`}>
       {/* 좌석 그리드 */}
       <div className="bg-white rounded-lg border p-4">
-        {/* 스크린 표시 */}
+        {/* 무대 표시 */}
         <div className="mb-6">
           <div className="w-full h-2 bg-gradient-to-r from-transparent via-gray-300 to-transparent rounded-full mb-2"></div>
-          <div className="text-center text-xs text-gray-500">SCREEN</div>
+          <div className="text-center text-xs text-gray-500">공연 무대</div>
         </div>
 
         {/* 좌석 배치 */}
         <div 
-          className="max-w-full overflow-x-auto"
+          className="w-full overflow-x-auto overflow-y-hidden"
           role="grid"
           aria-label="좌석 선택 그리드"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#CBD5E0 #F7FAFC',
+          }}
         >
-          <div className="min-w-max space-y-1">
+          <div className="inline-block min-w-full space-y-1 pb-2">
             {seatRows.map((row) => (
               <SeatRow
                 key={row.rowName}
@@ -188,30 +192,30 @@ export const SeatGrid = memo<SeatGridProps>(({ className }) => {
         <h3 className="text-sm font-medium text-gray-900 mb-3">좌석 등급 및 상태</h3>
         
         {/* 등급별 범례 */}
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-primary/20 border border-primary/40 rounded-sm"></div>
-            <span className="text-xs text-gray-600">R석 (프리미엄)</span>
+        <div className="grid grid-cols-3 gap-3 mb-3">
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 bg-purple-200 border-2 border-purple-400 rounded"></div>
+            <span className="text-sm text-gray-700 font-medium">R석 (이코노미)</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-cyan-100 border border-cyan-300 rounded-sm"></div>
-            <span className="text-xs text-gray-600">S석 (스탠다드)</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 bg-cyan-200 border-2 border-cyan-400 rounded"></div>
+            <span className="text-sm text-gray-700 font-medium">S석 (스탠다드)</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-pink-100 border border-pink-300 rounded-sm"></div>
-            <span className="text-xs text-gray-600">A석 (이코노미)</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 bg-amber-200 border-2 border-amber-400 rounded"></div>
+            <span className="text-sm text-gray-700 font-medium">A석 (프리미엄)</span>
           </div>
         </div>
 
         {/* 상태별 범례 */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-primary border border-primary rounded-sm"></div>
-            <span className="text-xs text-gray-600">선택됨</span>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 bg-green-600 border-2 border-green-400 rounded shadow-sm"></div>
+            <span className="text-sm text-gray-700 font-medium">선택됨</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gray-400 border border-gray-500 rounded-sm"></div>
-            <span className="text-xs text-gray-600">예약됨</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 bg-gray-400 border-2 border-gray-500 rounded"></div>
+            <span className="text-sm text-gray-700 font-medium">예약됨</span>
           </div>
         </div>
       </div>
@@ -225,7 +229,7 @@ export const SeatGrid = memo<SeatGridProps>(({ className }) => {
           <div className="text-xs text-gray-600">선택 가능</div>
         </div>
         <div className="bg-white rounded-lg border p-3">
-          <div className="text-lg font-semibold text-primary">
+          <div className="text-lg font-semibold text-green-600">
             {selectedSeats.length}
           </div>
           <div className="text-xs text-gray-600">선택됨</div>

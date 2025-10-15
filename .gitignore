@@ -60,3 +60,6 @@ next-env.d.ts
 /CLAUDE.md
 /CLAUDE.md.bak
 # END Ruler Generated Files
+
+/.cursor
+

@@ -159,31 +159,26 @@ export const CustomerInfoPage = memo<CustomerInfoPageProps>(({
     setError(null);
 
     // 예약 생성 API 호출
-    fetch('/api/reservations', {
+    fetch('/api/booking/reserve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        concertId,
         scheduleId,
         seatIds,
-        customerInfo: {
-          name: data.name,
-          phone: data.phone,
-          email: data.email || null,
-        },
+        customerName: data.name,
+        customerPhone: data.phone,
+        customerEmail: data.email || '',
+        totalPrice: bookingSummary.totalPrice,
       }),
     })
-      .then(response => {
-        if (!response.ok) {
-          return response.json().then(errorData => {
-            throw new Error(errorData.message || '예약 처리 중 오류가 발생했습니다');
-          });
+      .then(response => response.json())
+      .then(responseData => {
+        if (responseData.ok) {
+          // 예약 완료 페이지로 이동
+          router.push(`/booking/success?reservationId=${responseData.data.reservationId}`);
+        } else {
+          throw new Error(responseData.error?.message || '예약 처리 중 오류가 발생했습니다');
         }
-        return response.json();
-      })
-      .then(result => {
-        // 예약 완료 페이지로 이동
-        router.push(`/booking/${concertId}/complete?reservationId=${result.reservationId}`);
       })
       .catch(error => {
         const errorMessage = error instanceof Error ? error.message : '예약 처리 중 오류가 발생했습니다';

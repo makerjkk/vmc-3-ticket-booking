@@ -441,4 +441,141 @@ export const registerScheduleRoutes = (app: Hono<AppEnv>) => {
     logger.info(`만료된 홀드 정리 성공: cleaned=${result.data.cleanedCount}`);
     return respond(c, result);
   });
+
+  // 좌석 정보 요약 조회 (customer-info 페이지용)
+  app.post('/api/schedules/:scheduleId/seats/summary', async (c) => {
+    const scheduleId = c.req.param('scheduleId');
+    const supabase = getSupabase(c);
+    const logger = getLogger(c);
+
+    let requestBody;
+    try {
+      requestBody = await c.req.json();
+    } catch (error) {
+      return respond(
+        c,
+        failure(400, 'INVALID_JSON', '유효하지 않은 JSON 형식입니다')
+      );
+    }
+
+    const { seatIds } = requestBody;
+
+    if (!Array.isArray(seatIds) || seatIds.length === 0) {
+      return respond(
+        c,
+        failure(400, 'INVALID_REQUEST', '좌석 ID 목록이 필요합니다')
+      );
+    }
+
+    logger.info('좌석 정보 요약 조회 요청', { scheduleId, seatCount: seatIds.length });
+
+    try {
+      const { data: seats, error } = await supabase
+        .from('seats')
+        .select('id, seat_number, grade, price, status, row_name, seat_index')
+        .eq('schedule_id', scheduleId)
+        .in('id', seatIds);
+
+      if (error) {
+        logger.error('좌석 정보 조회 실패', error);
+        return respond(
+          c,
+          failure(500, 'DATABASE_ERROR', '좌석 정보를 조회할 수 없습니다')
+        );
+      }
+
+      const totalPrice = seats?.reduce((sum, seat) => sum + seat.price, 0) || 0;
+
+      logger.info('좌석 정보 요약 조회 성공', { seatCount: seats?.length });
+
+      return c.json({
+        seats: seats || [],
+        totalPrice,
+      });
+    } catch (error) {
+      logger.error('좌석 정보 요약 조회 예외', error);
+      return respond(
+        c,
+        failure(500, 'INTERNAL_ERROR', '서버 내부 오류가 발생했습니다')
+      );
+    }
+  });
+
+  // 콘서트 스케줄 상세 조회 (customer-info 페이지용)
+  app.get('/api/concerts/:concertId/schedule/:scheduleId', async (c) => {
+    const concertId = c.req.param('concertId');
+    const scheduleId = c.req.param('scheduleId');
+    const supabase = getSupabase(c);
+    const logger = getLogger(c);
+
+    logger.info('콘서트 스케줄 상세 조회 요청', { concertId, scheduleId });
+
+    try {
+      // 먼저 스케줄만 조회해서 존재 여부 확인
+      const { data: scheduleOnly, error: scheduleOnlyError } = await supabase
+        .from('schedules')
+        .select('id, concert_id, date_time')
+        .eq('id', scheduleId)
+        .maybeSingle();
+
+      logger.info('스케줄 존재 확인', { exists: !!scheduleOnly, error: scheduleOnlyError });
+
+      const { data: schedule, error: scheduleError } = await supabase
+        .from('schedules')
+        .select(`
+          id,
+          concert_id,
+          date_time,
+          concerts (
+            id,
+            title,
+            description,
+            venue_name,
+            venue_address
+          )
+        `)
+        .eq('id', scheduleId)
+        .eq('concert_id', concertId)
+        .single();
+
+      if (scheduleError || !schedule) {
+        logger.error('스케줄 정보 조회 실패', { error: scheduleError, schedule });
+        return respond(
+          c,
+          failure(404, 'SCHEDULE_NOT_FOUND', '스케줄을 찾을 수 없습니다')
+        );
+      }
+
+      const dateTime = new Date(schedule.date_time);
+      const dateStr = dateTime.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        weekday: 'short',
+      });
+      const timeStr = dateTime.toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+
+      logger.info('콘서트 스케줄 상세 조회 성공');
+
+      return c.json({
+        concert: schedule.concerts,
+        schedule: {
+          id: schedule.id,
+          date: dateStr,
+          time: timeStr,
+          dateTime: schedule.date_time,
+        },
+      });
+    } catch (error) {
+      logger.error('콘서트 스케줄 상세 조회 예외', error);
+      return respond(
+        c,
+        failure(500, 'INTERNAL_ERROR', '서버 내부 오류가 발생했습니다')
+      );
+    }
+  });
 };

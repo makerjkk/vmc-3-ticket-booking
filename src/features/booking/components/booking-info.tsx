@@ -6,13 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useBookingInfo } from '../hooks/use-booking-info';
+import { useReserveRequest } from '../hooks/use-reserve-request';
+import { CustomerInfoModal } from './customer-info-modal';
 import { cn } from '@/lib/utils';
 
 interface BookingInfoProps {
+  scheduleId: string;
   className?: string;
 }
 
-export const BookingInfo = memo<BookingInfoProps>(({ className }) => {
+export const BookingInfo = memo<BookingInfoProps>(({ scheduleId, className }) => {
   const {
     selectedSeats,
     totalPrice,
@@ -26,6 +29,8 @@ export const BookingInfo = memo<BookingInfoProps>(({ className }) => {
     canProceed,
     validationErrors,
   } = useBookingInfo();
+
+  const { handleReserve } = useReserveRequest();
 
   // 선택된 좌석이 없는 경우
   if (selectedSeatCount === 0) {
@@ -176,6 +181,14 @@ export const BookingInfo = memo<BookingInfoProps>(({ className }) => {
           <p>• 다른 사용자가 선택한 좌석은 자동으로 해제됩니다</p>
         </div>
       </CardContent>
+
+      {/* 고객 정보 입력 모달 */}
+      <CustomerInfoModal
+        selectedSeats={selectedSeats}
+        scheduleId={scheduleId}
+        totalPrice={totalPrice}
+        onReserve={handleReserve}
+      />
     </Card>
   );
 });
