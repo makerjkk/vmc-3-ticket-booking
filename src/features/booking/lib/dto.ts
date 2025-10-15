@@ -66,7 +66,43 @@ export interface SessionData {
 
 // 유틸리티 타입
 export type ScheduleStatus = 'available' | 'sold-out' | 'almost-sold-out' | 'expired';
-export type SeatStatus = 'available' | 'reserved' | 'selected' | 'hold';
+export type SeatStatus = 'available' | 'reserved' | 'selected' | 'held' | 'conflict';
+
+// 좌석 선택 관련 타입
+export interface Seat {
+  id: string;
+  seatNumber: string;
+  rowName: string;
+  seatIndex: number;
+  grade: 'R' | 'S' | 'A';
+  price: number;
+  status: 'available' | 'reserved' | 'held';
+  xPosition: number;
+  yPosition: number;
+  metadata?: {
+    isAccessible?: boolean;
+    hasObstruction?: boolean;
+    sightlineRating?: number;
+  };
+}
+
+export interface SeatRow {
+  rowName: string;
+  seats: Seat[];
+}
+
+export interface AlertState {
+  message: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  duration?: number;
+  actionable?: boolean;
+}
+
+export interface ConnectionStatus {
+  status: 'connected' | 'disconnected' | 'error';
+  lastConnected?: number;
+  retryCount?: number;
+}
 
 // API 응답 래퍼 타입 (React Query용)
 export interface ApiResponse<T> {

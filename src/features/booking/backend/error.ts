@@ -10,6 +10,12 @@ export const scheduleErrorCodes = {
   seatDataLoadFailed: 'SEAT_DATA_LOAD_FAILED',
   seatNotFound: 'SEAT_NOT_FOUND',
   seatAlreadyReserved: 'SEAT_ALREADY_RESERVED',
+  seatConflict: 'SEAT_CONFLICT',
+  seatHoldFailed: 'SEAT_HOLD_FAILED',
+  seatReleaseFailed: 'SEAT_RELEASE_FAILED',
+  seatHoldExpired: 'SEAT_HOLD_EXPIRED',
+  maxSeatsExceeded: 'MAX_SEATS_EXCEEDED',
+  seatNotAvailable: 'SEAT_NOT_AVAILABLE',
   
   // 날짜/시간 관련 에러
   invalidDateRange: 'INVALID_DATE_RANGE',
@@ -30,6 +36,11 @@ export const scheduleErrorCodes = {
   validationError: 'VALIDATION_ERROR',
   schemaValidationFailed: 'SCHEMA_VALIDATION_FAILED',
   
+  // 시스템 에러
+  cleanupFailed: 'CLEANUP_FAILED',
+  transactionFailed: 'TRANSACTION_FAILED',
+  concurrencyError: 'CONCURRENCY_ERROR',
+  
   // 일반 에러
   fetchError: 'FETCH_ERROR',
   networkError: 'NETWORK_ERROR',
@@ -47,6 +58,12 @@ export const scheduleErrorMessages = {
   [scheduleErrorCodes.seatDataLoadFailed]: '좌석 정보를 불러올 수 없습니다',
   [scheduleErrorCodes.seatNotFound]: '좌석을 찾을 수 없습니다',
   [scheduleErrorCodes.seatAlreadyReserved]: '이미 예약된 좌석입니다',
+  [scheduleErrorCodes.seatConflict]: '선택하신 좌석 중 일부가 다른 사용자에게 예약되었습니다',
+  [scheduleErrorCodes.seatHoldFailed]: '좌석 임시 예약에 실패했습니다',
+  [scheduleErrorCodes.seatReleaseFailed]: '좌석 예약 해제에 실패했습니다',
+  [scheduleErrorCodes.seatHoldExpired]: '좌석 임시 예약이 만료되었습니다',
+  [scheduleErrorCodes.maxSeatsExceeded]: '최대 4석까지만 선택할 수 있습니다',
+  [scheduleErrorCodes.seatNotAvailable]: '선택할 수 없는 좌석입니다',
   
   [scheduleErrorCodes.invalidDateRange]: '유효하지 않은 날짜 범위입니다',
   [scheduleErrorCodes.pastDateSelected]: '과거 날짜는 선택할 수 없습니다',
@@ -62,6 +79,10 @@ export const scheduleErrorMessages = {
   
   [scheduleErrorCodes.validationError]: '입력 데이터가 유효하지 않습니다',
   [scheduleErrorCodes.schemaValidationFailed]: '데이터 형식이 올바르지 않습니다',
+  
+  [scheduleErrorCodes.cleanupFailed]: '시스템 정리 작업에 실패했습니다',
+  [scheduleErrorCodes.transactionFailed]: '트랜잭션 처리에 실패했습니다',
+  [scheduleErrorCodes.concurrencyError]: '동시 접근으로 인한 오류가 발생했습니다',
   
   [scheduleErrorCodes.fetchError]: '데이터를 불러오는 중 오류가 발생했습니다',
   [scheduleErrorCodes.networkError]: '네트워크 연결을 확인해주세요',
@@ -94,6 +115,9 @@ export const getScheduleErrorHttpStatus = (errorCode: ScheduleServiceError): num
     case 'SCHEDULE_SOLD_OUT':
     case 'SEAT_ALREADY_RESERVED':
     case 'SCHEDULE_EXPIRED':
+    case 'SEAT_CONFLICT':
+    case 'SEAT_HOLD_EXPIRED':
+    case 'CONCURRENCY_ERROR':
       return 409; // Conflict
     
     case 'DATABASE_ERROR':

@@ -206,6 +206,9 @@ use following libraries for specific functionalities:
 - `useMemo` 내부에서 Hook 호출 금지, 개별 `useCallback` 정의 후 객체로 묶기
 - 클래스 상속 시 `private` 메서드는 `protected`로 변경하여 접근성 확보
 - 함수 호출 시 매개변수 개수와 타입을 정확히 맞춰 시그니처 준수
+- Client Component에서 `async/await` 절대 사용 금지, Promise 체인(`.then().catch()`) 사용
+- 백엔드 서비스 작성 전 `supabase/migrations` 파일로 실제 DB 스키마 확인 필수
+- Supabase 타입 에러 발생 시 `@ts-nocheck` 또는 명시적 타입 단언으로 우회
 
 You are a senior full-stack developer, one of those rare 10x devs. Your focus: clean, maintainable, high-quality code.
 Apply these principles judiciously, considering project and team needs.

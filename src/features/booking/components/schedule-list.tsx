@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useScheduleSelection } from '../context/schedule-selection-context';
 import { useSchedulesByDate } from '../hooks/use-schedule-selection';
+import { useAvailableDates } from '../hooks/use-available-dates';
 import { ScheduleCard } from './schedule-card';
 import { ScheduleLoadingSkeleton } from './schedule-loading-skeleton';
 import { ScheduleErrorMessage } from './schedule-error-message';
@@ -11,48 +12,136 @@ import { DateTimeUtils } from '../lib/datetime-utils';
 
 // 날짜 선택 컴포넌트
 function DateSelector({ 
+  concertId,
   selectedDate, 
   onDateSelect 
 }: { 
+  concertId: string;
   selectedDate: string | null; 
   onDateSelect: (date: string) => void;
 }) {
-  // 예시로 다음 7일간의 날짜 생성 (실제로는 콘서트별 예매 가능 날짜를 가져와야 함)
-  const availableDates = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() + i);
-    return DateTimeUtils.formatDate(date);
-  });
+  const { data: availableDates, isLoading, error } = useAvailableDates(concertId);
+
+  // 로딩 상태
+  if (isLoading) {
+    return (
+      <div className="mb-6">
+        <h3 className="text-sm font-medium text-gray-700 mb-3">날짜 선택</h3>
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex-shrink-0 w-20 h-16 bg-gray-200 rounded-lg animate-pulse"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // 에러 상태
+  if (error) {
+    return (
+      <div className="mb-6">
+        <h3 className="text-sm font-medium text-gray-700 mb-3">날짜 선택</h3>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-red-800">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <span className="text-sm">예매 가능한 날짜를 불러올 수 없습니다</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 예매 가능한 날짜가 없는 경우
+  if (!availableDates || availableDates.length === 0) {
+    return (
+      <div className="mb-6">
+        <h3 className="text-sm font-medium text-gray-700 mb-3">날짜 선택</h3>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-yellow-800">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-sm">현재 예매 가능한 날짜가 없습니다</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-6">
-      <h3 className="text-sm font-medium text-gray-700 mb-3">날짜 선택</h3>
+      <h3 className="text-sm font-medium text-gray-700 mb-3">
+        날짜 선택
+        <span className="ml-2 text-xs text-gray-500">
+          ({availableDates.length}개 날짜 예매 가능)
+        </span>
+      </h3>
       <div className="flex gap-2 overflow-x-auto pb-2">
-        {availableDates.map((date) => {
-          const isSelected = selectedDate === date;
-          const dayOfWeek = DateTimeUtils.getDayOfWeekKorean(date);
-          const formattedDate = DateTimeUtils.formatDateKorean(date);
+        {availableDates.map((dateInfo) => {
+          const isSelected = selectedDate === dateInfo.date;
+          const dayOfWeek = DateTimeUtils.getDayOfWeekKorean(dateInfo.date);
+          const formattedDate = DateTimeUtils.formatDateKorean(dateInfo.date);
+          const isAvailable = dateInfo.hasAvailableSeats;
           
-          return (
-            <button
-              key={date}
-              onClick={() => onDateSelect(date)}
-              className={`
-                flex-shrink-0 px-4 py-3 rounded-lg border text-sm font-medium transition-all
-                ${isSelected 
-                  ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
-                  : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                }
-              `}
-            >
-              <div className="text-center">
-                <div className="font-medium">{dayOfWeek}</div>
-                <div className="text-xs opacity-75 mt-1">
-                  {formattedDate.split(' ')[2]} {/* 일만 표시 */}
-                </div>
-              </div>
-            </button>
-          );
+                  return (
+                    <button
+                      key={dateInfo.date}
+                      onClick={() => isAvailable && onDateSelect(dateInfo.date)}
+                      disabled={!isAvailable}
+                      className={`
+                        flex-shrink-0 px-3 py-3 rounded-lg border text-sm font-medium transition-all min-w-[100px]
+                        ${isSelected 
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
+                          : isAvailable
+                            ? 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                            : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                        }
+                      `}
+                    >
+                      <div className="text-center">
+                        <div className="font-medium">{dayOfWeek}</div>
+                        <div className="text-xs opacity-75 mt-1">
+                          {formattedDate.split(' ')[2]} {/* 일만 표시 */}
+                        </div>
+                        {!isAvailable && (
+                          <div className="text-xs text-red-500 mt-1">매진</div>
+                        )}
+                        {isAvailable && dateInfo.scheduleCount > 0 && (
+                          <div className="text-xs text-blue-500 mt-1">
+                            {dateInfo.scheduleCount}회차
+                          </div>
+                        )}
+                        {/* 시간 정보 표시 */}
+                        {isAvailable && dateInfo.schedules && dateInfo.schedules.length > 0 && (
+                          <div className="text-xs mt-1 space-y-0.5">
+                            {dateInfo.schedules.slice(0, 2).map((schedule, idx) => (
+                              <div 
+                                key={idx}
+                                className={`
+                                  ${schedule.hasAvailableSeats 
+                                    ? isSelected ? 'text-blue-100' : 'text-gray-600'
+                                    : 'text-red-500 line-through'
+                                  }
+                                `}
+                              >
+                                {schedule.time}
+                              </div>
+                            ))}
+                            {dateInfo.schedules.length > 2 && (
+                              <div className={`${isSelected ? 'text-blue-100' : 'text-gray-500'}`}>
+                                +{dateInfo.schedules.length - 2}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
         })}
       </div>
     </div>
@@ -60,7 +149,7 @@ function DateSelector({
 }
 
 // 회차 목록 컴포넌트
-export function ScheduleList() {
+export function ScheduleList({ concertId }: { concertId?: string }) {
   const {
     state,
     selectDate,
@@ -72,11 +161,11 @@ export function ScheduleList() {
     hideTooltip,
   } = useScheduleSelection();
 
-  const [concertId] = useState(() => {
-    // 세션에서 concertId 가져오기
+  // props로 받은 concertId가 없으면 세션에서 가져오기
+  const effectiveConcertId = concertId || (() => {
     const sessionData = SessionManager.load();
     return sessionData?.concertId || '';
-  });
+  })();
 
   // React Query로 회차 데이터 페칭
   const {
@@ -85,9 +174,9 @@ export function ScheduleList() {
     error,
     refetch,
   } = useSchedulesByDate(
-    concertId,
+    effectiveConcertId,
     state.selectedDate,
-    !!state.selectedDate && !!concertId
+    !!state.selectedDate && !!effectiveConcertId
   );
 
   // 날짜 선택 핸들러
@@ -171,6 +260,7 @@ export function ScheduleList() {
     <div className="space-y-6">
       {/* 날짜 선택 */}
       <DateSelector 
+        concertId={effectiveConcertId}
         selectedDate={state.selectedDate}
         onDateSelect={handleDateSelect}
       />
@@ -236,6 +326,7 @@ export function ScheduleList() {
                 schedule={schedule}
                 isSelected={state.selectedScheduleId === schedule.id}
                 onClick={() => handleScheduleSelect(schedule.id)}
+                concertId={effectiveConcertId}
               />
             ))}
           </div>

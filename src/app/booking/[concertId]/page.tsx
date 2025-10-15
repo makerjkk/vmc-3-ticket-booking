@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ScheduleSelectionProvider } from '@/features/booking/context/schedule-selection-context';
 import { ScheduleList } from '@/features/booking/components/schedule-list';
-import { SeatLayout } from '@/features/booking/components/seat-layout';
+import { ConcertInfoHeader } from '@/features/booking/components/concert-info-header';
 import { BookingProgress } from '@/features/booking/components/booking-progress';
 import { ScheduleLoadingSkeleton } from '@/features/booking/components/schedule-loading-skeleton';
 import { ScheduleErrorMessage } from '@/features/booking/components/schedule-error-message';
@@ -142,25 +142,57 @@ function BookingPageContent({ concertId }: { concertId: string }) {
 
         {/* 메인 콘텐츠 */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* 콘서트 정보 헤더 */}
+          <ConcertInfoHeader concertId={concertId} />
+          
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* 회차 선택 영역 */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg shadow-sm border p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">
-                  회차 선택
+                  날짜 및 회차 선택
                 </h2>
-                <ScheduleList />
+                <ScheduleList concertId={concertId} />
               </div>
             </div>
 
-            {/* 좌석 선택 및 예매 정보 영역 */}
+            {/* 예매 안내 영역 */}
             <div className="space-y-6">
-              {/* 좌석 배치도 */}
+              {/* 예매 안내 */}
               <div className="bg-white rounded-lg shadow-sm border p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">
-                  좌석 선택
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  예매 안내
                 </h3>
-                <SeatLayout />
+                <div className="space-y-3 text-sm text-gray-600">
+                  <div className="flex items-start gap-2">
+                    <span className="text-blue-600 font-medium">1.</span>
+                    <span>원하시는 날짜와 회차를 선택해주세요</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-blue-600 font-medium">2.</span>
+                    <span>좌석 선택 페이지에서 원하는 좌석을 선택하세요 (최대 4석)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-blue-600 font-medium">3.</span>
+                    <span>예약자 정보를 입력하고 결제를 완료하세요</span>
+                  </div>
+                </div>
+                
+                <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <div>
+                      <p className="text-sm font-medium text-amber-800">예매 시 유의사항</p>
+                      <ul className="mt-1 text-xs text-amber-700 space-y-1">
+                        <li>• 선택된 좌석은 5분간 임시 예약됩니다</li>
+                        <li>• 결제 완료 전까지는 예약이 확정되지 않습니다</li>
+                        <li>• 한 번에 최대 4석까지 예매 가능합니다</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

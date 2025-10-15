@@ -1,6 +1,7 @@
 'use client';
 
 import { memo } from 'react';
+import { useRouter } from 'next/navigation';
 import type { ScheduleItem } from '../lib/dto';
 import { DateTimeUtils } from '../lib/datetime-utils';
 
@@ -8,13 +9,16 @@ interface ScheduleCardProps {
   schedule: ScheduleItem;
   isSelected: boolean;
   onClick: () => void;
+  concertId?: string; // 좌석 선택 페이지로 이동하기 위해 추가
 }
 
 export const ScheduleCard = memo<ScheduleCardProps>(({ 
   schedule, 
   isSelected, 
-  onClick 
+  onClick,
+  concertId
 }) => {
+  const router = useRouter();
   const scheduleTime = DateTimeUtils.formatScheduleTime(schedule.dateTime);
   const relativeTime = DateTimeUtils.getRelativeTime(schedule.dateTime);
   const isPast = DateTimeUtils.isPastSchedule(schedule.dateTime);
@@ -104,7 +108,14 @@ export const ScheduleCard = memo<ScheduleCardProps>(({
     if (isPast || schedule.isSoldOut) {
       return;
     }
+    
+    // 기존 onClick 호출 (상태 업데이트용)
     onClick();
+    
+    // 좌석 선택 페이지로 이동
+    if (concertId) {
+      router.push(`/booking/${concertId}/seats?scheduleId=${schedule.id}`);
+    }
   };
 
   // 키보드 핸들러

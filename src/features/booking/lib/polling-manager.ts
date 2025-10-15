@@ -163,7 +163,7 @@ export class PollingManager {
    */
   destroy(): void {
     this.stop();
-    this.callback = async () => {};
+    this.callback = () => Promise.resolve();
     this.onError = undefined;
     this.onSuccess = undefined;
   }

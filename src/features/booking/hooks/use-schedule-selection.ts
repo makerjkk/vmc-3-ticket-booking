@@ -136,30 +136,30 @@ export const useSchedulePolling = (scheduleId: string | null, enabled = true) =>
       return;
     }
 
-    const pollSeatCount = async () => {
-      try {
-        const data = await fetchSeatCount(scheduleId);
-        
-        // 기존 데이터와 비교하여 변화가 있을 때만 업데이트
-        const currentData = queryClient.getQueryData(scheduleQueryKeys.seatCount(scheduleId));
-        if (currentData && JSON.stringify(currentData) !== JSON.stringify(data)) {
-          queryClient.setQueryData(scheduleQueryKeys.seatCount(scheduleId), data);
-        }
-        
-        retryCountRef.current = 0; // 성공 시 재시도 카운트 리셋
-      } catch (error) {
-        retryCountRef.current += 1;
-        
-        if (retryCountRef.current >= maxRetries) {
-          console.error('폴링 최대 재시도 횟수 초과:', error);
-          stopPolling();
-          return;
-        }
-        
-        // 지수 백오프 적용
-        const backoffDelay = baseInterval * Math.pow(2, retryCountRef.current - 1);
-        setTimeout(pollSeatCount, backoffDelay);
-      }
+    const pollSeatCount = () => {
+      fetchSeatCount(scheduleId)
+        .then(data => {
+          // 기존 데이터와 비교하여 변화가 있을 때만 업데이트
+          const currentData = queryClient.getQueryData(scheduleQueryKeys.seatCount(scheduleId));
+          if (currentData && JSON.stringify(currentData) !== JSON.stringify(data)) {
+            queryClient.setQueryData(scheduleQueryKeys.seatCount(scheduleId), data);
+          }
+          
+          retryCountRef.current = 0; // 성공 시 재시도 카운트 리셋
+        })
+        .catch(error => {
+          retryCountRef.current += 1;
+          
+          if (retryCountRef.current >= maxRetries) {
+            console.error('폴링 최대 재시도 횟수 초과:', error);
+            stopPolling();
+            return;
+          }
+          
+          // 지수 백오프 적용
+          const backoffDelay = baseInterval * Math.pow(2, retryCountRef.current - 1);
+          setTimeout(pollSeatCount, backoffDelay);
+        });
     };
 
     intervalRef.current = setInterval(pollSeatCount, baseInterval);
@@ -238,12 +238,12 @@ export const useScheduleCacheUtils = () => {
     });
   }, [queryClient]);
 
-  const prefetchSeatLayout = useCallback(async (scheduleId: string) => {
-    await queryClient.prefetchQuery({
+  const prefetchSeatLayout = useCallback((scheduleId: string) => {
+    queryClient.prefetchQuery({
       queryKey: scheduleQueryKeys.seatLayout(scheduleId),
       queryFn: () => fetchSeatLayout(scheduleId),
       staleTime: 1000 * 60 * 2,
-    });
+    }).catch(console.error);
   }, [queryClient]);
 
   return {

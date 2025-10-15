@@ -31,9 +31,9 @@ export const createTestConcerts = async (client: SupabaseClient) => {
         poster_image_url: 'https://picsum.photos/seed/bts-concert/400/600',
       },
       {
-        title: '뉴진스 팬미팅',
-        description: '뉴진스와 함께하는 특별한 팬미팅 시간입니다.',
-        poster_image_url: 'https://picsum.photos/seed/newjeans-fanmeeting/400/600',
+        title: '뉴진스 콘서트',
+        description: '뉴진스와 함께하는 특별한 콘서트 시간입니다.',
+        poster_image_url: 'https://picsum.photos/seed/newjeans-concert/400/600',
       },
     ];
 
